@@ -21,32 +21,34 @@ public class QuadTree : MonoBehaviour
     [Range(1, 10)] public int treesPerNode;
     [Range(1, 20)] public float distBetweenTree;
 
-    private static readonly int QUADTREE_MAX_LEVEL = 8;
+    private static readonly int QUADTREE_MAX_LEVEL = 6;
 
     _QuadTree m_quadTree;
     List<Vector3> treesPositions = new List<Vector3>();
     List<GameObject> trees = new List<GameObject>();
     public List<GameObject> treesPrefabs = new List<GameObject>();
 
-    private static Bounds GenBoundChild(Bounds b, string boundPosition)
+    private static Bounds GenBoundChild(Bounds b, int boundPosition)
     {
+        //|1 = TL|   |2 = TR|   |3 = BL|  |4 = BR| 
+
         Bounds newBound = new Bounds();
-        if (boundPosition.Equals("TL"))
+        if (boundPosition == 1)
         {
             newBound.min = new Vector3(b.min.x, 0, ((b.min.z + b.max.z) / 2));
             newBound.max = new Vector3(((b.min.x + b.max.x) / 2), 0, b.max.z);
         }
-        else if (boundPosition.Equals("TR"))
+        else if (boundPosition == 2)
         {
             newBound.min = new Vector3(((b.min.x + b.max.x) / 2),0 , ((b.min.z + b.max.z) / 2));
             newBound.max = new Vector3(b.max.x, 0, b.max.z);
         }
-        else if (boundPosition.Equals("BL"))
+        else if (boundPosition == 3)
         {
             newBound.min = new Vector3(b.min.x, 0, b.min.z);
             newBound.max = new Vector3(((b.min.x + b.max.x) / 2), 0, ((b.min.z + b.max.z) / 2));
         }
-        else if (boundPosition.Equals("BR"))
+        else if (boundPosition == 4)
         {
             newBound.min = new Vector3(((b.min.x + b.max.x) / 2), 0, b.min.z);
             newBound.max = new Vector3(b.max.x, 0, ((b.min.z + b.max.z) / 2));
@@ -78,27 +80,27 @@ public class QuadTree : MonoBehaviour
     private static void SubdivideQuadTree(_QuadTree qt, int curentLevel = 0)
     {
         if (curentLevel > QUADTREE_MAX_LEVEL) return;
-
+        
         qt.TL = new _QuadTree();
-        qt.TL.bound = GenBoundChild(qt.bound, "TL");
+        qt.TL.bound = GenBoundChild(qt.bound, 1);
         qt.TL.root = qt;
         SubdivideQuadTree(qt.TL, curentLevel + 1);
         
         ////////////////////////////
         qt.TR = new _QuadTree();
-        qt.TR.bound = GenBoundChild(qt.bound, "TR");
+        qt.TR.bound = GenBoundChild(qt.bound, 2);
         qt.TR.root = qt;
         SubdivideQuadTree(qt.TR, curentLevel + 1);
 
         ////////////////////////////
         qt.BL = new _QuadTree();
-        qt.BL.bound = GenBoundChild(qt.bound, "BL");
+        qt.BL.bound = GenBoundChild(qt.bound, 3);
         qt.BL.root = qt;
         SubdivideQuadTree(qt.BL, curentLevel + 1);
 
         ////////////////////////////
         qt.BR = new _QuadTree();
-        qt.BR.bound = GenBoundChild(qt.bound, "BR");
+        qt.BR.bound = GenBoundChild(qt.bound, 4);
         qt.BR.root = qt;
         SubdivideQuadTree(qt.BR, curentLevel + 1);
     }
@@ -185,7 +187,6 @@ public class QuadTree : MonoBehaviour
 
     void SpawnTrees()
     {
-        return;
         foreach (Vector3 tree in treesPositions)
         {
             GameObject prefab = treesPrefabs[Random.Range(0, treesPrefabs.Count - 1)];
