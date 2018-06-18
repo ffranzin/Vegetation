@@ -1,0 +1,53 @@
+﻿#pragma kernel CSMain
+
+#include "HumidityUtils.cginc"
+
+#define GROUP_SIZE 64
+
+uint2 Size;
+int Distance;
+StructuredBuffer<float> WaterData;
+RWStructuredBuffer<float> WaterSpreadData;
+
+[numthreads(GROUP_SIZE,1,1)]
+void CSMain (uint3 dispid : SV_DispatchThreadID, uint3 groupid : SV_GroupID, uint3 groupThid : SV_GroupThreadID)
+{
+	uint2 range = uint2(groupid.x * GROUP_SIZE, groupid.x * GROUP_SIZE + GROUP_SIZE - 1);
+
+	//uint i = id.y * 1024 + id.x;
+	//const int dst = 20;
+
+	WaterSpreadData[dispid.x] = 0;
+
+	GroupMemoryBarrierWithGroupSync();
+
+	//int i = id.x / Size.x;
+	//int j = id.x % Size.x;
+
+	float dst = float(Distance);
+
+	//float[] kernel = new float[Distance];
+
+	for (int k = 1; k <= Distance; k++)
+	{
+		//kernel[k] = 1 - ((k + 1) / Distance);
+
+		WaterSpreadData[min(range.y, dispid.x + k)] += (1.0 - WaterData[dispid.x]) * (1.0 - abs(k) / dst);
+		WaterSpreadData[max(range.x, dispid.x - k)] += (1.0 - WaterData[dispid.x]) * (1.0 - abs(k) / dst);
+	}
+
+	WaterSpreadData[dispid.x] = (1.0 - WaterData[dispid.x]);
+
+	//WaterSpreadData[id.x] = 0;
+
+	//for (int k = -Distance; k < Distance; k++)
+	//{
+		//WaterSpreadData[id.x] += (1.0 - WaterData[id.x]);
+		//WaterSpreadData[(i + k) * Width + j] += (1.0 - WaterData[id.x]) * (1.0 - abs(k)/dst);
+	//}
+
+
+	//Result[id.xy] = WaterData[i];
+
+	//Result[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
+}
