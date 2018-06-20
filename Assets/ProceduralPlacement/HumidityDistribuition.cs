@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.UI;
@@ -91,8 +92,15 @@ public class HumidityDistribuition : MonoBehaviour
     {
         if (heightMapRawImg != null)
         {
+            //heightMapTex = new Texture2D(heightMapRawImg.texture.width, heightMapRawImg.texture.height, TextureFormat.RFloat, false, true);//heightMapRawImg.texture. as Texture2D;
+            //heightMapTex.LoadRawTextureData((heightMapRawImg.texture as Texture2D).GetRawTextureData());
             heightMapTex = heightMapRawImg.texture as Texture2D;
             heightData = heightMapTex.GetRawTextureData();
+            //byte[] tempBuffer = heightMapTex.GetRawTextureData();
+            //heightData = new float[tempBuffer.Length / 4];
+            //Buffer.BlockCopy(tempBuffer, 0, heightData, 0, tempBuffer.Length);
+
+
 
             Debug.Log("HeightMap :: data length: " +  heightData.Length 
                 + " | width: " + heightMapTex.width + " | height: " + heightMapTex.height);
@@ -302,7 +310,7 @@ public class HumidityDistribuition : MonoBehaviour
 
         slopeRawImg.texture = slopeTex;
 
-        humidityTex = new Texture2D(heightMapTex.width, heightMapTex.height, TextureFormat.R8, false, true);
+        humidityTex = new Texture2D(heightMapTex.width, heightMapTex.height, TextureFormat.RFloat, false, true);
         humidityTex.alphaIsTransparency = false;
         humidityTex.LoadRawTextureData(humidityData);
         humidityTex.Apply();
