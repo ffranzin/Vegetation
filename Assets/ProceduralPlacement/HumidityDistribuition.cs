@@ -84,7 +84,7 @@ public class HumidityDistribuition : MonoBehaviour
     private byte[] humidityData;
     #endregion
 
-    #region PUBLIC METHODS
+    #region PUBLIC METHODS    
     /// <summary>
     /// 
     /// </summary>
@@ -95,7 +95,11 @@ public class HumidityDistribuition : MonoBehaviour
             //heightMapTex = new Texture2D(heightMapRawImg.texture.width, heightMapRawImg.texture.height, TextureFormat.RFloat, false, true);//heightMapRawImg.texture. as Texture2D;
             //heightMapTex.LoadRawTextureData((heightMapRawImg.texture as Texture2D).GetRawTextureData());
             heightMapTex = heightMapRawImg.texture as Texture2D;
-            heightData = heightMapTex.GetRawTextureData();
+            //heightData = heightMapTex.GetRawTextureData();
+            float[] raster = TextureReader.ReadTIFF(Application.dataPath + "/Resources/Heighmaps/heightmap_Rfloat.tif");
+
+            heightData = raster.Select((float f) => (byte)(f * 255)).ToArray();
+
             //byte[] tempBuffer = heightMapTex.GetRawTextureData();
             //heightData = new float[tempBuffer.Length / 4];
             //Buffer.BlockCopy(tempBuffer, 0, heightData, 0, tempBuffer.Length);
@@ -310,7 +314,7 @@ public class HumidityDistribuition : MonoBehaviour
 
         slopeRawImg.texture = slopeTex;
 
-        humidityTex = new Texture2D(heightMapTex.width, heightMapTex.height, TextureFormat.RFloat, false, true);
+        humidityTex = new Texture2D(heightMapTex.width, heightMapTex.height, TextureFormat.R8, false, true);
         humidityTex.alphaIsTransparency = false;
         humidityTex.LoadRawTextureData(humidityData);
         humidityTex.Apply();
@@ -323,6 +327,8 @@ public class HumidityDistribuition : MonoBehaviour
     /// </summary>
     public void PrintHeightMapValues()
     {
+        TextureReader.ReadTIFF(Application.dataPath + "/Resources/Heighmaps/heightmap_Rfloat.tif");
+
         ExtractHeightData();
 
         byte[] relative = relativeHeightTex?.GetRawTextureData();
@@ -342,6 +348,7 @@ public class HumidityDistribuition : MonoBehaviour
 
         Debug.Log("HeightMap Data........: " + sb1.ToString());
         Debug.Log("RelativeHeightMap Data: " + sb2.ToString());
+
     }
     #endregion
 
