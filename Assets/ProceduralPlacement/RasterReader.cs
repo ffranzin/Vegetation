@@ -121,11 +121,11 @@ public class RasterReader
         band.ReadRaster(0, 0, rasterSizeX, rasterSizey, rasterData, rasterSizeX, rasterSizey, 0, 0);
 
         {// print sample data
-         //StringBuilder sb = new StringBuilder();
-         //sb.Append("RasterData: " + rasterData.Length.ToString() + " :: ");
-         //for (int i = 0; i < 50; i++)
-         //    sb.Append(rasterData[i].ToString() + " | ");
-         //Debug.Log(sb.ToString());
+            StringBuilder sb = new StringBuilder();
+            sb.Append(path + " data " + rasterData.Length.ToString() + " :: ");
+            for (int i = 0; i < 50; i++)
+                sb.Append(rasterData[i].ToString() + " | ");
+            Debug.Log(sb.ToString());
         }
 
         rasterInfo = new RasterInfo()

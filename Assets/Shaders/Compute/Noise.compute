@@ -1,16 +1,22 @@
-﻿#pragma kernel CSMain
+﻿#pragma kernel Vert
+#pragma kernel Hor
 
 #include "HumidityUtils.cginc"
 
-#define GROUP_SIZE 64
+#define GROUP_SIZE 8
 
-uint2 Size;
+uint Width;
+//uint2 Size;
 int Distance;
 StructuredBuffer<float> WaterData;
-RWStructuredBuffer<float> WaterSpreadData;
+RWStructuredBuffer<float> VertSpread;
+RWStructuredBuffer<float> SpreadData;
 
-[numthreads(GROUP_SIZE,1,1)]
-void CSMain (uint3 dispid : SV_DispatchThreadID, uint3 groupid : SV_GroupID, uint3 groupThid : SV_GroupThreadID)
+RWStructuredBuffer<float> AuxBuffer;
+
+
+[numthreads(GROUP_SIZE, GROUP_SIZE, 1)]
+void Vert (uint3 dispid : SV_DispatchThreadID, uint3 groupid : SV_GroupID, uint3 groupThid : SV_GroupThreadID)
 {
 	uint2 range = uint2(groupid.x * GROUP_SIZE, groupid.x * GROUP_SIZE + GROUP_SIZE - 1);
 
@@ -19,7 +25,6 @@ void CSMain (uint3 dispid : SV_DispatchThreadID, uint3 groupid : SV_GroupID, uin
 
 	WaterSpreadData[dispid.x] = 0;
 
-	GroupMemoryBarrierWithGroupSync();
 
 	//int i = id.x / Size.x;
 	//int j = id.x % Size.x;

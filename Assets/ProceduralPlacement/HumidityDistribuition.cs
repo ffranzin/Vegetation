@@ -9,6 +9,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Profiling;
 using UnityEngine.UI;
+using UnityEngine.Rendering;
 
 [ExecuteInEditMode]
 [RequireComponent(typeof(TextureManager))]
@@ -50,7 +51,10 @@ public class HumidityDistribuition : MonoBehaviour
     //public RawImage humidityRawImg;
 
     [Space]
-    //public ComputeShader waterSpreadCompute;
+    public ComputeShader waterSpreadCompute;
+
+    public ComputeBuffer waterBuffer;
+    public ComputeBuffer waterSpreadBuffer;
     #endregion
 
     #region PRIVATE VARIABLES
@@ -110,6 +114,16 @@ public class HumidityDistribuition : MonoBehaviour
         //    //tileSize = TexManager.Width / horizontalTiles;
         //    //hvTiles = new Vector2(horizontalTiles, TexManager.Height / tileSize);
         //}
+
+        if(TexManager.IsWaterDataLoaded)
+        {
+            if(waterBuffer == null)
+                waterBuffer = new ComputeBuffer(waterData.Length, sizeof(float), ComputeBufferType.Default);
+            if (waterSpreadBuffer == null)
+                waterSpreadBuffer = new ComputeBuffer(waterData.Length, sizeof(float), ComputeBufferType.Default);
+
+            waterBuffer.SetData(waterData);
+        }
     }
 
     /// <summary>
@@ -197,87 +211,68 @@ public class HumidityDistribuition : MonoBehaviour
     /// </summary>
     public void CalculateWaterSpread()
     {
-        /*
-        if (heightData != null && waterMapRawImg != null)
+        if (TexManager.IsWaterDataLoaded)
         {
-            waterMapTex = waterMapRawImg.texture as Texture2D;
-            waterData = waterMapTex.GetRawTextureData();
-            waterSpreadData = new byte[waterData.Length];
-
-            //int length = spread.maxDistance * 2 + 1;
-            float[] kernel = new float[spread.maxDistance * 2 + 1];
-            //kernel[spread.maxDistance] = 1f;
-
-            for (int k = 0; k <= spread.maxDistance; k++)
-            {
-                float value = spread.horizontal.Evaluate((float)k / (float)spread.maxDistance);
-                kernel[spread.maxDistance + k] = value;
-                kernel[spread.maxDistance - k] = value;
-            }
-
-            TextureSize size = new TextureSize(waterMapTex.width, waterMapTex.height);
-
-            //if (waterSpreadRT != null) waterSpreadRT.Release();
-            //waterSpreadRT = new RenderTexture(size.width, size.height, 0, RenderTextureFormat.RFloat, RenderTextureReadWrite.Linear);
-            //waterSpreadRT.enableRandomWrite = true;
-            //waterSpreadRT.Create();
-
-            int kernelHandle = waterSpreadCompute.FindKernel("CSMain");
-
-            ComputeBuffer waterBuffer = new ComputeBuffer(waterData.Length, sizeof(float), ComputeBufferType.Default);
-            waterBuffer.SetData(waterData.Select(b => { return (float)b / 255f; }).ToArray());
-
-            ComputeBuffer waterSpreadBuffer = new ComputeBuffer(waterData.Length, sizeof(float), ComputeBufferType.Default);
-
-            waterSpreadCompute.SetInt("Width", size.width);
-            waterSpreadCompute.SetInt("Distance", spread.maxDistance);
-            waterSpreadCompute.SetBuffer(kernelHandle, "WaterData", waterBuffer);
-            waterSpreadCompute.SetBuffer(kernelHandle, "WaterSpreadData", waterSpreadBuffer);
-            waterSpreadCompute.Dispatch(kernelHandle, waterData.Length / 64, 1, 1);
-            //waterSpreadCompute.Dispatch(kernelHandle, size.width / 8, size.height / 8, 1);
-
-            float[] result = new float[waterData.Length];
-            waterSpreadBuffer.GetData(result);
-
-            for (int i = 0; i < waterSpreadData.Length; i++)
-            {
-                waterSpreadData[i] = System.Convert.ToByte(Mathf.Clamp01(result[i]) * 255f);
-            }
-
-            waterSpreadTex = new Texture2D(size.width, size.height, TextureFormat.R8, false, true);
-            waterSpreadTex.alphaIsTransparency = false;
-            waterSpreadTex.LoadRawTextureData(waterSpreadData);
-            waterSpreadTex.Apply();
-
-            waterSpreadRawImg.texture = waterSpreadTex;
-
-            waterBuffer.Release();
-            waterSpreadBuffer.Release();
-            //int[] positions = LocateWater(waterData, size);
-
-            //for (int k = 0; k < positions.Length; k++)
+            waterSpreadData = new float[waterData.Length];
+            
+            //float[] kernel = new float[spread.maxDistance * 2 + 1];
+            //for (int k = 0; k <= spread.maxDistance; k++)
             //{
-            //    int i, j;
-            //    To2DIndex(positions[k], size.width, out i, out j);
-
-            //    // horizontal spread
-            //    for(int x = (-spread.maxDistance); x <= spread.maxDistance; x++)
-            //    {
-            //        if (i + x < 0) continue;
-            //        if (i + x >= size.width) break;
-
-            //        waterSpreadData[k]
-            //    }
-
-            //    // vertical spread (not height)
-            //    for (int y = 0; y < spread.maxDistance; y++)
-            //    {
-            //        if (i + y < 0) continue;
-            //        if (i + y >= size.height) break;
-            //    }
+            //    float value = spread.horizontal.Evaluate((float)k / (float)spread.maxDistance);
+            //    kernel[spread.maxDistance + k] = value;
+            //    kernel[spread.maxDistance - k] = value;
             //}
+
+            int kernelHandleV = waterSpreadCompute.FindKernel("Vert");
+            int kernelHandleH = waterSpreadCompute.FindKernel("Hor");
+
+
+
+            waterSpreadCompute.SetInt("Width", TexManager.Width);
+            waterSpreadCompute.SetInt("Distance", spread.maxDistance);
+            waterSpreadCompute.SetBuffer(kernelHandleV, "WaterData", waterBuffer);
+            waterSpreadCompute.SetBuffer(kernelHandleV, "WaterSpreadData", waterSpreadBuffer);
+
+            ComputeBuffer auxBuffer = new ComputeBuffer(1, 4);
+            waterSpreadCompute.SetBuffer(kernelHandleV, "auxBuffer", auxBuffer);
+
+            waterSpreadCompute.Dispatch(kernelHandleV, TexManager.Height / 8, TexManager.Width / 8, 1);
+
+            float[] a = new float[1];
+            auxBuffer.GetData(a);
+
+
+
+
+
+
+            waterSpreadCompute.SetBuffer(kernelHandleH, "WaterData", waterBuffer);
+            waterSpreadCompute.SetBuffer(kernelHandleH, "WaterSpreadData", waterSpreadBuffer);
+
+
+
+            //AsyncGPUReadback.Request()
+
+            //AsyncGPUReadbackRequest re = new AsyncGPUReadbackRequest();
+            //re.done
+
+
+
+            waterSpreadBuffer.GetData(waterSpreadData);
+
+            //float[] result = new float[waterData.Length];
+            //waterSpreadBuffer.GetData(result);
+
+            for (int i = 0; i < 50; i++)
+            {
+                Debug.Log(waterSpreadData[i]);
+            }
+
+
+            TexManager.UpdateWaterSpreadTexture(waterSpreadData);
         }
-        */
+        else
+            Debug.LogError("Slope not calculated.");
     }
 
     /// <summary>
@@ -289,6 +284,9 @@ public class HumidityDistribuition : MonoBehaviour
         //{
         //    waterSpreadRT.Release();
         //    waterSpreadRT = null;
+
+        waterBuffer.Release();
+        waterSpreadBuffer.Release();
     }
 
     /// <summary>
@@ -436,34 +434,12 @@ public class HumidityDistribuition : MonoBehaviour
 
         return Mathf.Sqrt((slopeX * slopeX) + (slopeY * slopeY)) / MAX_SLOPE;
     }
-
-    ///// <summary>
-    ///// 
-    ///// </summary>
-    //private byte CalculatePixelWaterSpread(byte[] srcData, int i, int j, TextureSize size)
-    //{
-    //    // top, bottom, left and right pixels
-    //    float t = srcData[To1DIndex(i - Mathf.Min(i, slopeDistance), j, size.width)];
-    //    float b = srcData[To1DIndex(Mathf.Min(size.height - 1, i + slopeDistance), j, size.width)];
-    //    float l = srcData[To1DIndex(i, j - Mathf.Min(j, slopeDistance), size.width)];
-    //    float r = srcData[To1DIndex(i, Mathf.Min(size.width - 1, j + slopeDistance), size.width)];
-
-    //    float slopeX = (l - r) / 2f;
-    //    float slopeY = (t - b) / 2f;
-
-    //    return System.Convert.ToByte(Mathf.Round(
-    //        Mathf.Sqrt((slopeX * slopeX) + (slopeY * slopeY)) / MAX_SLOPE * 255f));
-    //}
-
+    
     /// <summary>
     /// 
     /// </summary>
     private void InterpolateValues(float[] data, int[,] idx)
     {
-        //int hTiles = size.width / tileSize;
-        //int vTiles = size.height / tileSize;
-        //int totalTiles = hTiles * vTiles;
-
         float div = 1.0f / (float)tileSize;
 
         for (int k = 0; k < totalTiles; k++)
@@ -510,6 +486,9 @@ public class HumidityDistribuition : MonoBehaviour
         return indexes.ToArray();
     }
 
+    #endregion
+
+    #region UTILS
     /// <summary>
     /// 
     /// </summary>
