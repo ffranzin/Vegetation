@@ -15,6 +15,16 @@ public class HumidityDistribuitionEditor : Editor
             myScript.PrintHeightMapValues();
         }
 
+        if (GUILayout.Button("Clean All Data"))
+        {
+            myScript.CleanData();
+        }
+
+        if (GUILayout.Button("Load Data"))
+        {
+            myScript.LoadDataFromFiles();
+        }
+
         if (GUILayout.Button("Calculate Mean Height"))
         {
             myScript.CalculateMeanHeight();
@@ -42,7 +52,12 @@ public class HumidityDistribuitionEditor : Editor
 
         if (GUILayout.Button("Reload Textures"))
         {
-            myScript.LoadHeightTextures();
+            myScript.UpdateTextures();
+        }
+
+        if (GUILayout.Button("Save Textures"))
+        {
+            myScript.SaveTextures();
         }
     }
 }

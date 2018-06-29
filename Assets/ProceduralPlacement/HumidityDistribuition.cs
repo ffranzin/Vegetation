@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,21 +11,9 @@ using UnityEngine.Profiling;
 using UnityEngine.UI;
 
 [ExecuteInEditMode]
+[RequireComponent(typeof(TextureManager))]
 public class HumidityDistribuition : MonoBehaviour
 {
-    [System.Serializable]
-    public struct TextureSize
-    {
-        public int width;
-        public int height;
-
-        public TextureSize(int width, int height)
-        {
-            this.width = width;
-            this.height = height;
-        }
-    }
-
     [System.Serializable]
     public struct Spread
     {
@@ -35,80 +24,108 @@ public class HumidityDistribuition : MonoBehaviour
     }
 
     #region PUBLIC VARIABLES
-    public int horizontalTiles = 16;
-    public int slopeDistance = 1;
-    [Range(0, 255)] public byte waterThreshold = 254;
+    [Range(1, 1024)] public int horizontalTiles = 16;
+    [Range(0, 512)] public int slopeDistance = 1; // in pixels
+    [Range(0, 1)] public float waterThreshold = 0.99f;
 
     [Header("Humidity Parameters")]
     public AnimationCurve verticalHumidity;
+    public AnimationCurve relativeHeightInfluence;
     [Space]
     public Spread spread;
-    [Header("Positive Influences")]
+    [Header("Positive And Negative Influences")]
     [Range(0, 20)] public float relativeHeightWeight = 1f;
+    [Header("Positive Influences")]
     [Range(0, 20)] public float waterbodiesWeight = 1f;
     [Header("Negative Influences")]
     [Range(0, 20)] public float slopeWeight = 0.5f;
 
     [Space]
-    public RawImage heightMapRawImg;
-    public RawImage waterMapRawImg;
-    public RawImage waterSpreadRawImg;
-    public RawImage meanHeightRawImg;
-    public RawImage relativeHeightRawImg;
-    public RawImage slopeRawImg;
-    public RawImage humidityRawImg;
+    //public RawImage heightMapRawImg;
+    //public RawImage waterMapRawImg;
+    //public RawImage waterSpreadRawImg;
+    //public RawImage meanHeightRawImg;
+    //public RawImage relativeHeightRawImg;
+    //public RawImage slopeRawImg;
+    //public RawImage humidityRawImg;
 
     [Space]
-    public ComputeShader waterSpreadCompute;
+    //public ComputeShader waterSpreadCompute;
     #endregion
 
     #region PRIVATE VARIABLES
-    private const float MAX_SLOPE = 180f;
+    private const float MAX_SLOPE = 0.5f;
 
-    private RenderTexture waterSpreadRT;
+    //private RenderTexture waterSpreadRT;
 
-    private Texture2D heightMapTex;
-    private Texture2D waterMapTex;
-    private Texture2D waterSpreadTex;
-    private Texture2D meanHeightTex;
-    private Texture2D relativeHeightTex;
-    private Texture2D slopeTex;
-    private Texture2D humidityTex;
+    //private Texture2D heightMapTex;
+    //private Texture2D waterMapTex;
+    //private Texture2D waterSpreadTex;
+    //private Texture2D meanHeightTex;
+    //private Texture2D relativeHeightTex;
+    //private Texture2D slopeTex;
+    //private Texture2D humidityTex;
 
-    private byte[] heightData;
-    private byte[] waterData;
-    private byte[] waterSpreadData;
-    private byte[] meanHeightData;
-    private byte[] relativeHeightData;
-    private byte[] slopeData;
-    private byte[] humidityData;
+    /// <summary>
+    /// Size of a tile in pixels
+    /// </summary>
+    private int tileSize { get { return TexManager.Width / horizontalTiles; } }
+    private int hTiles { get { return horizontalTiles; } }
+    private int vTiles { get { return TexManager.Height / tileSize; } }
+    private int totalTiles { get { return hTiles * vTiles; } }
+
+    private float[] heightData = null;
+    private float[] waterData = null;
+    private float[] waterSpreadData = null;
+    private float[] meanHeightData = null;
+    private float[] relativeHeightData = null;
+    private float[] slopeData = null;
+    private float[] humidityData = null;
+
+    private TextureManager m_TexManager;
+    private TextureManager TexManager
+    {
+        get {
+            if (m_TexManager == null)
+                m_TexManager = GetComponent<TextureManager>();
+            return m_TexManager;
+        }
+    }
     #endregion
 
-    #region PUBLIC METHODS    
+    #region PUBLIC METHODS
     /// <summary>
     /// 
     /// </summary>
-    public void ExtractHeightData()
+    public void LoadDataFromFiles()
     {
-        if (heightMapRawImg != null)
-        {
-            //heightMapTex = new Texture2D(heightMapRawImg.texture.width, heightMapRawImg.texture.height, TextureFormat.RFloat, false, true);//heightMapRawImg.texture. as Texture2D;
-            //heightMapTex.LoadRawTextureData((heightMapRawImg.texture as Texture2D).GetRawTextureData());
-            heightMapTex = heightMapRawImg.texture as Texture2D;
-            //heightData = heightMapTex.GetRawTextureData();
-            float[] raster = TextureReader.ReadTIFF(Application.dataPath + "/Resources/Heighmaps/heightmap_Rfloat.tif");
+        heightData = TexManager.LoadHeightData();
+        waterData = TexManager.LoadWaterData();
 
-            heightData = raster.Select((float f) => (byte)(f * 255)).ToArray();
+        TexManager.UpdateHeightmapTexture();
+        TexManager.UpdateWatermapTexture();
 
-            //byte[] tempBuffer = heightMapTex.GetRawTextureData();
-            //heightData = new float[tempBuffer.Length / 4];
-            //Buffer.BlockCopy(tempBuffer, 0, heightData, 0, tempBuffer.Length);
+        //if (TexManager.IsHeightDataLoaded)
+        //{
+        //    //tileSize = TexManager.Width / horizontalTiles;
+        //    //hvTiles = new Vector2(horizontalTiles, TexManager.Height / tileSize);
+        //}
+    }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    public void CleanData()
+    {
+        TexManager.CleanData();
 
-
-            Debug.Log("HeightMap :: data length: " +  heightData.Length 
-                + " | width: " + heightMapTex.width + " | height: " + heightMapTex.height);
-        }
+        heightData = null;
+        waterData = null;
+        waterSpreadData = null;
+        meanHeightData = null;
+        relativeHeightData = null;
+        slopeData = null;
+        humidityData = null;
     }
 
     /// <summary>
@@ -116,20 +133,22 @@ public class HumidityDistribuition : MonoBehaviour
     /// </summary>
     public void CalculateMeanHeight()
     {
-        if (heightMapRawImg != null && heightMapRawImg.texture != null)
+        if (TexManager.IsHeightDataLoaded)
         {
-            ExtractHeightData();
-            meanHeightData = new byte[heightData.Length];
+            meanHeightData = new float[TexManager.Resolution];
 
-            TextureSize texSize = new TextureSize(heightMapTex.width, heightMapTex.height);
-            int tileSize = texSize.width / horizontalTiles;
-            int totalTiles = horizontalTiles * (texSize.height / tileSize);
             int[,] indexes;
 
-            GetTilesCornersIndexes(out indexes, texSize, tileSize);
-            CalculateCornersMeans(heightData, meanHeightData, indexes, texSize, totalTiles);
-            InterpolateValues(meanHeightData, indexes, texSize, tileSize);
+            // TODO: implement all this stuff in a compute shader
+
+            GetTilesCornersIndexes(out indexes);
+            CalculateCornersMeans(heightData, meanHeightData, indexes);
+            InterpolateValues(meanHeightData, indexes);
+
+            TexManager.UpdateMeanHeightTexture(meanHeightData);
         }
+        else
+            Debug.LogError("Mean Height not calculated.");
     }
 
     /// <summary>
@@ -137,16 +156,17 @@ public class HumidityDistribuition : MonoBehaviour
     /// </summary>
     public void CalculateRelativeHeight()
     {
-        if(heightData != null && meanHeightData != null)
+        if (TexManager.IsHeightDataLoaded && meanHeightData != null)
         {
-            relativeHeightData = new byte[heightData.Length];
+            relativeHeightData = new float[TexManager.Resolution];
 
             for (int i = 0; i < heightData.Length; i++)
-            {
-                relativeHeightData[i] = System.Convert.ToByte(Mathf.Round(
-                        ((((float)heightData[i] - (float)meanHeightData[i]) / 255f) + 1f) * 127.5f));
-            }
+                relativeHeightData[i] = ((heightData[i] - meanHeightData[i]) + 1f) * 0.5f;
+
+            TexManager.UpdateRelativeHeightTexture(relativeHeightData);
         }
+        else
+            Debug.LogError("Relative Height not calculated.");
     }
 
     /// <summary>
@@ -154,21 +174,22 @@ public class HumidityDistribuition : MonoBehaviour
     /// </summary>
     public void CalculateSlope()
     {
-        if (heightMapRawImg != null && heightMapRawImg.texture != null)
+        if (TexManager.IsHeightDataLoaded)
         {
-            ExtractHeightData();
-            slopeData = new byte[heightData.Length];
+            slopeData = new float[TexManager.Resolution];
 
-            TextureSize texSize = new TextureSize(heightMapTex.width, heightMapTex.height);
-            
-            for(int i = 0; i < texSize.height; i++)
+            for (int i = 0; i < TexManager.Height; i++)
             {
-                for (int j = 0; j < texSize.width; j++)
+                for (int j = 0; j < TexManager.Width; j++)
                 {
-                    slopeData[To1DIndex(i, j, texSize.width)] = CalculatePixelSlope(heightData, i, j, texSize);
+                    slopeData[To1DIndex(i, j, TexManager.Width)] = CalculatePixelSlope(heightData, i, j);
                 }
             }
+
+            TexManager.UpdateSlopeTexture(slopeData);
         }
+        else
+            Debug.LogError("Slope not calculated.");
     }
 
     /// <summary>
@@ -176,6 +197,7 @@ public class HumidityDistribuition : MonoBehaviour
     /// </summary>
     public void CalculateWaterSpread()
     {
+        /*
         if (heightData != null && waterMapRawImg != null)
         {
             waterMapTex = waterMapRawImg.texture as Texture2D;
@@ -217,7 +239,7 @@ public class HumidityDistribuition : MonoBehaviour
             float[] result = new float[waterData.Length];
             waterSpreadBuffer.GetData(result);
 
-            for(int i = 0; i < waterSpreadData.Length; i++)
+            for (int i = 0; i < waterSpreadData.Length; i++)
             {
                 waterSpreadData[i] = System.Convert.ToByte(Mathf.Clamp01(result[i]) * 255f);
             }
@@ -255,15 +277,18 @@ public class HumidityDistribuition : MonoBehaviour
             //    }
             //}
         }
+        */
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     private void OnDestroy()
     {
-        if (waterSpreadRT != null)
-        {
-            waterSpreadRT.Release();
-            waterSpreadRT = null;
-        }
+        //if (waterSpreadRT != null)
+        //{
+        //    waterSpreadRT.Release();
+        //    waterSpreadRT = null;
     }
 
     /// <summary>
@@ -271,55 +296,41 @@ public class HumidityDistribuition : MonoBehaviour
     /// </summary>
     public void CalculateHumidity()
     {
-        if (heightData != null && meanHeightData != null && relativeHeightData != null && slopeData != null)
+        if (TexManager.IsHeightDataLoaded && meanHeightData != null && relativeHeightData != null && slopeData != null)
         {
-            humidityData = new byte[heightData.Length];
+            humidityData = new float[TexManager.Resolution];
 
-            for(int k = 0; k < humidityData.Length; k++)
+            for (int k = 0; k < humidityData.Length; k++)
             {
-                float baseHumidity = verticalHumidity.Evaluate((float)heightData[k] / 255f);
+                float baseHumidity = verticalHumidity.Evaluate(heightData[k]);
 
-                float relativeHumidity = relativeHeightWeight * (1f - ((float)relativeHeightData[k] / 255f));
+                float relativeHumidity = relativeHeightWeight * relativeHeightInfluence.Evaluate(relativeHeightData[k]); //(1f - (relativeHeightData[k]));
 
-                float finalHumidity = baseHumidity * ( 1 + relativeHumidity - slopeWeight * ((float)slopeData[k] / 255f)) + 0.1f * relativeHumidity;
-                
-                humidityData[k] = System.Convert.ToByte(Mathf.Clamp01(finalHumidity) * 255f);
+                float finalHumidity = baseHumidity * (1 + relativeHumidity - slopeWeight * (slopeData[k])) + 0.1f * relativeHumidity;
+
+                humidityData[k] = Mathf.Clamp01(finalHumidity);
             }
+
+            TexManager.UpdateHumidityTexture(humidityData);
         }
+        else
+            Debug.LogError("Humidity not calculated.");
     }
 
     /// <summary>
     /// 
     /// </summary>
-    public void LoadHeightTextures()
+    public void UpdateTextures()
     {
-        meanHeightTex = new Texture2D(heightMapTex.width, heightMapTex.height, TextureFormat.R8, false, true);
-        meanHeightTex.alphaIsTransparency = false;
-        meanHeightTex.LoadRawTextureData(meanHeightData);
-        meanHeightTex.Apply();
+        TexManager.UpdateAllTextures(meanHeightData, relativeHeightData, slopeData, waterSpreadData, humidityData);
+    }
 
-        meanHeightRawImg.texture = meanHeightTex;
-
-        relativeHeightTex = new Texture2D(heightMapTex.width, heightMapTex.height, TextureFormat.R8, false, true);
-        relativeHeightTex.alphaIsTransparency = false;
-        relativeHeightTex.LoadRawTextureData(relativeHeightData);
-        relativeHeightTex.Apply();
-
-        relativeHeightRawImg.texture = relativeHeightTex;
-
-        slopeTex = new Texture2D(heightMapTex.width, heightMapTex.height, TextureFormat.R8, false, true);
-        slopeTex.alphaIsTransparency = false;
-        slopeTex.LoadRawTextureData(slopeData);
-        slopeTex.Apply();
-
-        slopeRawImg.texture = slopeTex;
-
-        humidityTex = new Texture2D(heightMapTex.width, heightMapTex.height, TextureFormat.R8, false, true);
-        humidityTex.alphaIsTransparency = false;
-        humidityTex.LoadRawTextureData(humidityData);
-        humidityTex.Apply();
-
-        humidityRawImg.texture = humidityTex;
+    /// <summary>
+    /// 
+    /// </summary>
+    public void SaveTextures()
+    {
+        TexManager.SaveAllTextures(meanHeightData, relativeHeightData, slopeData, waterSpreadData, humidityData);
     }
 
     /// <summary>
@@ -327,27 +338,28 @@ public class HumidityDistribuition : MonoBehaviour
     /// </summary>
     public void PrintHeightMapValues()
     {
-        TextureReader.ReadTIFF(Application.dataPath + "/Resources/Heighmaps/heightmap_Rfloat.tif");
+        Debug.Log("Nothing here");
 
-        ExtractHeightData();
+        //if (heightData == null || heightData.Length == 0)
+        //    ExtractHeightData();
 
-        byte[] relative = relativeHeightTex?.GetRawTextureData();
+        //byte[] relative = relativeHeightTex?.GetRawTextureData();
 
-        Debug.Log("Texture Format HM.: " + heightMapTex.format.ToString() + "\n size: " + heightMapTex.dimension.ToString());
-        Debug.Log("Texture Format RHM: " + heightMapTex.format.ToString() + "\n size: " + heightMapTex.dimension.ToString());
-        Debug.Log(heightData.Length);
-        Debug.Log(relative.Length);
+        //Debug.Log("Texture Format HM.: " + heightMapTex.format.ToString() + "\n size: " + heightMapTex.dimension.ToString());
+        //Debug.Log("Texture Format RHM: " + heightMapTex.format.ToString() + "\n size: " + heightMapTex.dimension.ToString());
+        //Debug.Log(heightData.Length);
+        //Debug.Log(relative.Length);
 
-        StringBuilder sb1 = new StringBuilder();
-        StringBuilder sb2 = new StringBuilder();
-        for (int i = 0; i < 20; i++)
-        {
-            sb1.Append(heightData[i].ToString() + " | ");
-            if (relative != null) sb2.Append(relative[i].ToString() + " | ");
-        }
+        //StringBuilder sb1 = new StringBuilder();
+        //StringBuilder sb2 = new StringBuilder();
+        //for (int i = 0; i < 20; i++)
+        //{
+        //    sb1.Append(heightData[i].ToString() + " | ");
+        //    if (relative != null) sb2.Append(relative[i].ToString() + " | ");
+        //}
 
-        Debug.Log("HeightMap Data........: " + sb1.ToString());
-        Debug.Log("RelativeHeightMap Data: " + sb2.ToString());
+        //Debug.Log("HeightMap Data........: " + sb1.ToString());
+        //Debug.Log("RelativeHeightMap Data: " + sb2.ToString());
 
     }
     #endregion
@@ -356,21 +368,17 @@ public class HumidityDistribuition : MonoBehaviour
     /// <summary>
     /// 
     /// </summary>
-    private void GetTilesCornersIndexes(out int[,] indexes, TextureSize size, int tileSize)
+    private void GetTilesCornersIndexes(out int[,] indexes)
     {
-        int hTiles = size.width  / tileSize;
-        int vTiles = size.height / tileSize;
-        int totalTiles = hTiles * vTiles;
-
         indexes = new int[2, totalTiles * 2];
-        
+
         for (int k = 0; k < totalTiles; k++)
         {
             int offset = k * 2;
 
-            indexes[0, offset]     = (k / hTiles)       * tileSize;
+            indexes[0, offset] = (k / hTiles) * tileSize;
             indexes[0, offset + 1] = indexes[0, offset] + tileSize - 1;
-            indexes[1, offset]     = (k % hTiles)       * tileSize;
+            indexes[1, offset] = (k % hTiles) * tileSize;
             indexes[1, offset + 1] = indexes[1, offset] + tileSize - 1;
         }
     }
@@ -378,16 +386,16 @@ public class HumidityDistribuition : MonoBehaviour
     /// <summary>
     /// 
     /// </summary>
-    private void CalculateCornersMeans(byte[] srcData, byte[] dstData, int[,] idx, TextureSize size, int totalTiles)
+    private void CalculateCornersMeans(float[] srcData, float[] dstData, int[,] idx)
     {
         for (int k = 0; k < totalTiles; k++)
         {
             int offset = k * 2;
 
-            dstData[To1DIndex(idx[0, offset]  , idx[1, offset]  , size.width)] = CalculatePixelMean(srcData, idx[0, offset]  , idx[1, offset]  , size);
-            dstData[To1DIndex(idx[0, offset]  , idx[1, offset+1], size.width)] = CalculatePixelMean(srcData, idx[0, offset]  , idx[1, offset+1], size);
-            dstData[To1DIndex(idx[0, offset+1], idx[1, offset+1], size.width)] = CalculatePixelMean(srcData, idx[0, offset+1], idx[1, offset+1], size);
-            dstData[To1DIndex(idx[0, offset+1], idx[1, offset]  , size.width)] = CalculatePixelMean(srcData, idx[0, offset+1], idx[1, offset]  , size);
+            dstData[To1DIndex(idx[0, offset], idx[1, offset], TexManager.Width)] = CalculatePixelMean(srcData, idx[0, offset], idx[1, offset]);
+            dstData[To1DIndex(idx[0, offset], idx[1, offset + 1], TexManager.Width)] = CalculatePixelMean(srcData, idx[0, offset], idx[1, offset + 1]);
+            dstData[To1DIndex(idx[0, offset + 1], idx[1, offset + 1], TexManager.Width)] = CalculatePixelMean(srcData, idx[0, offset + 1], idx[1, offset + 1]);
+            dstData[To1DIndex(idx[0, offset + 1], idx[1, offset], TexManager.Width)] = CalculatePixelMean(srcData, idx[0, offset + 1], idx[1, offset]);
         }
     }
 
@@ -399,35 +407,34 @@ public class HumidityDistribuition : MonoBehaviour
     /// <param name="j">Column index.</param>
     /// <param name="size">Texture size.</param>
     /// <returns>The calculated mean.</returns>
-    private byte CalculatePixelMean(byte[] srcData, int i, int j, TextureSize size)
+    private float CalculatePixelMean(float[] srcData, int i, int j)
     {
-        byte thisPixel = srcData[To1DIndex(i, j, size.width)];
+        float thisPixel = srcData[To1DIndex(i, j, TexManager.Width)];
 
-        int mean = thisPixel;
-        mean += (i > 0)               ? srcData[To1DIndex(i - 1, j, size.width)] : thisPixel;
-        mean += (i < (size.height-1)) ? srcData[To1DIndex(i + 1, j, size.width)] : thisPixel;
-        mean += (j > 0)               ? srcData[To1DIndex(i, j - 1, size.width)] : thisPixel;
-        mean += (j < (size.width-1))  ? srcData[To1DIndex(i, j + 1, size.width)] : thisPixel;
-        
-        return System.Convert.ToByte(mean / 5);
+        float mean = thisPixel;
+        mean += (i > 0) ? srcData[To1DIndex(i - 1, j, TexManager.Width)] : thisPixel; // top
+        mean += (i < (TexManager.Height - 1)) ? srcData[To1DIndex(i + 1, j, TexManager.Width)] : thisPixel; // bottom
+        mean += (j > 0) ? srcData[To1DIndex(i, j - 1, TexManager.Width)] : thisPixel; // left
+        mean += (j < (TexManager.Width - 1)) ? srcData[To1DIndex(i, j + 1, TexManager.Width)] : thisPixel; // right
+
+        return mean / 5f;
     }
 
     /// <summary>
     /// 
     /// </summary>
-    private byte CalculatePixelSlope(byte[] srcData, int i, int j, TextureSize size)
+    private float CalculatePixelSlope(float[] srcData, int i, int j)
     {
         // top, bottom, left and right pixels
-        float t = srcData[To1DIndex(i - Mathf.Min(i, slopeDistance), j, size.width)];
-        float b = srcData[To1DIndex(Mathf.Min(size.height-1, i + slopeDistance), j, size.width)];
-        float l = srcData[To1DIndex(i, j - Mathf.Min(j, slopeDistance), size.width)];
-        float r = srcData[To1DIndex(i, Mathf.Min(size.width-1, j + slopeDistance), size.width)];
+        float t = srcData[To1DIndex(i - Mathf.Min(i, slopeDistance), j, TexManager.Width)];
+        float b = srcData[To1DIndex(Mathf.Min(TexManager.Height - 1, i + slopeDistance), j, TexManager.Width)];
+        float l = srcData[To1DIndex(i, j - Mathf.Min(j, slopeDistance), TexManager.Width)];
+        float r = srcData[To1DIndex(i, Mathf.Min(TexManager.Width - 1, j + slopeDistance), TexManager.Width)];
 
         float slopeX = (l - r) / 2f;
         float slopeY = (t - b) / 2f;
 
-        return System.Convert.ToByte(Mathf.Round(
-            Mathf.Sqrt((slopeX * slopeX) + (slopeY * slopeY)) / MAX_SLOPE * 255f));
+        return Mathf.Sqrt((slopeX * slopeX) + (slopeY * slopeY)) / MAX_SLOPE;
     }
 
     ///// <summary>
@@ -451,34 +458,34 @@ public class HumidityDistribuition : MonoBehaviour
     /// <summary>
     /// 
     /// </summary>
-    private void InterpolateValues(byte[] data, int[,] idx, TextureSize size, int tileSize)
+    private void InterpolateValues(float[] data, int[,] idx)
     {
-        int hTiles = size.width  / tileSize;
-        int vTiles = size.height / tileSize;
-        int totalTiles = hTiles * vTiles;
-        
+        //int hTiles = size.width / tileSize;
+        //int vTiles = size.height / tileSize;
+        //int totalTiles = hTiles * vTiles;
+
         float div = 1.0f / (float)tileSize;
 
         for (int k = 0; k < totalTiles; k++)
         {
             int offset = k * 2;
             int x1 = idx[0, offset];
-            int x2 = idx[0, offset+1];
+            int x2 = idx[0, offset + 1];
             int y1 = idx[1, offset];
-            int y2 = idx[1, offset+1];
+            int y2 = idx[1, offset + 1];
 
-            byte tl = data[To1DIndex(x1, y1, size.width)];
-            byte tr = data[To1DIndex(x1, y2, size.width)];
-            byte br = data[To1DIndex(x2, y2, size.width)];
-            byte bl = data[To1DIndex(x2, y1, size.width)];
+            float tl = data[To1DIndex(x1, y1, TexManager.Width)];
+            float tr = data[To1DIndex(x1, y2, TexManager.Width)];
+            float br = data[To1DIndex(x2, y2, TexManager.Width)];
+            float bl = data[To1DIndex(x2, y1, TexManager.Width)];
 
-            for(int x = x1; x <= x2; x++)
+            for (int x = x1; x <= x2; x++)
             {
                 for (int y = y1; y <= y2; y++)
                 {
-                    data[To1DIndex(x, y, size.width)] = LinearInterpolation(
+                    data[To1DIndex(x, y, TexManager.Width)] = LinearInterpolation(
                         LinearInterpolation(tl, tr, (y - y1) * div),
-                        LinearInterpolation(bl, br, (y - y1) * div), 
+                        LinearInterpolation(bl, br, (y - y1) * div),
                         (x - x1) * div);
                 }
             }
@@ -488,11 +495,11 @@ public class HumidityDistribuition : MonoBehaviour
     /// <summary>
     /// 
     /// </summary>
-    private int[] LocateWater(byte[] data, TextureSize size)
+    private int[] LocateWater(float[] data)
     {
-        List<int> indexes = new List<int>(size.width * size.height / 3);
+        List<int> indexes = new List<int>(TexManager.Resolution / 4); // pre-allocates 25% of the max size to try to reduce the impact of adding to the list
 
-        for(int k = 0; k < data.Length; k++)
+        for (int k = 0; k < data.Length; k++)
         {
             if (waterData[k] <= waterThreshold)
             {
@@ -507,9 +514,9 @@ public class HumidityDistribuition : MonoBehaviour
     /// 
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private byte LinearInterpolation(byte a, byte b, float t)
+    private float LinearInterpolation(float a, float b, float t)
     {
-        return System.Convert.ToByte((b - a) * t + a);
+        return (b - a) * t + a;
     }
 
     /// <summary>
@@ -531,4 +538,16 @@ public class HumidityDistribuition : MonoBehaviour
         j = index1D % rowLength;
     }
     #endregion
+
+    private void OnValidate()
+    {
+        horizontalTiles = NearestPowerOfTwo(horizontalTiles); /* += horizontalTiles % 2;*/
+    }
+
+    private int NearestPowerOfTwo(int n)
+    {
+        if (n <= 1) return 1;
+        int power = System.Convert.ToInt32(Math.Round(Math.Log((double)n) / Math.Log(2.0)));
+        return 1 << power;
+    }
 }
