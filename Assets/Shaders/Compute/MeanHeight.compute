@@ -1,0 +1,76 @@
+﻿#pragma kernel FirstPass
+#pragma kernel SecondPass
+
+#include "HumidityUtils.cginc"
+
+#define MEAN_DISTANCE 1
+
+RWStructuredBuffer<float> MeanHeightData;
+
+[numthreads(GROUP_SIZE, GROUP_SIZE, 1)]
+void FirstPass(uint3 dispid : SV_DispatchThreadID)
+{
+	int i = To1DIndex(dispid.y, dispid.x, Size.x);
+
+	/*
+	VPass[i] = HeightData[i];
+	VPass[i] += HeightData[To1DIndex(max(0, dispid.y - MEAN_DISTANCE), dispid.x, Size.x)]; // top
+	VPass[i] += HeightData[To1DIndex(min((Size.y - 1), dispid.y + MEAN_DISTANCE), dispid.x, Size.x)]; // bottom
+	VPass[i] += HeightData[To1DIndex(dispid.y, max(0, dispid.x - MEAN_DISTANCE), Size.x)]; // left
+	VPass[i] += HeightData[To1DIndex(dispid.y, min((Size.x - 1), dispid.x + MEAN_DISTANCE), Size.x)]; // right
+
+	VPass[i] *= 0.20;
+	*/
+
+	//float dst = float(Distance);
+	//float accum = 0.0;
+
+	for (int k = 1; k <= Distance; k++)
+	{
+		//float w = 1.0;// -(float(k) / dst);
+		//accum += 2.0 * w;
+
+		VPass[i] += HeightData[To1DIndex(max(0, int(dispid.y) - k), dispid.x, Size.x)];// *w;
+		VPass[i] += HeightData[To1DIndex(min((Size.y - 1), dispid.y + k), dispid.x, Size.x)];// *w;
+
+		HPass[i] += HeightData[To1DIndex(dispid.y, max(0, int(dispid.x) - k), Size.x)];// *w;
+		HPass[i] += HeightData[To1DIndex(dispid.y, min((Size.x - 1), dispid.x + k), Size.x)];// *w;
+	}
+
+	VPass[i] /= (Distance * 2.0);
+	HPass[i] /= (Distance * 2.0);
+}
+
+[numthreads(GROUP_SIZE, GROUP_SIZE, 1)]
+void SecondPass(uint3 dispid : SV_DispatchThreadID)
+{
+	int i = To1DIndex(dispid.y, dispid.x, Size.x);
+
+	/*
+	MeanHeightData[i] = VPass[i];
+	MeanHeightData[i] += VPass[To1DIndex(max(0, dispid.y - Distance), dispid.x, Size.x)]; // top
+	MeanHeightData[i] += VPass[To1DIndex(min((Size.y - 1), dispid.y + Distance), dispid.x, Size.x)]; // bottom
+	MeanHeightData[i] += VPass[To1DIndex(dispid.y, max(0, dispid.x - Distance), Size.x)]; // left
+	MeanHeightData[i] += VPass[To1DIndex(dispid.y, min((Size.x - 1), dispid.x + Distance), Size.x)]; // right
+
+	MeanHeightData[i] *= 0.20;
+
+	//MeanHeightData[i] = VPass[i];
+	*/
+
+	//float dst = float(Distance);
+	//float accum = 0.0;
+
+	for (int k = 1; k <= Distance; k++)
+	{
+		//float w = 1.0;// -(float(k) / dst);
+		//accum += 2.0 * w;
+
+		MeanHeightData[i] += (VPass[To1DIndex(dispid.y, max(0, int(dispid.x) - k), Size.x)]
+			+ HPass[To1DIndex(max(0, int(dispid.y) - k), dispid.x, Size.x)]);// *w;
+		MeanHeightData[i] += (VPass[To1DIndex(dispid.y, min((Size.x - 1), dispid.x + k), Size.x)]
+			+ HPass[To1DIndex(min((Size.y - 1), dispid.y + k), dispid.x, Size.x)]);// *w;
+	}
+
+	MeanHeightData[i] = ((MeanHeightData[i] / (Distance * 2.0)));// + HeightData[i]) * 0.5;
+}

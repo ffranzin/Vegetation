@@ -26,7 +26,8 @@ public class HumidityDistribuition : MonoBehaviour
 
     #region PUBLIC VARIABLES
     [Range(1, 1024)] public int horizontalTiles = 16;
-    [Range(0, 512)] public int slopeDistance = 1; // in pixels
+    [Range(0, 512)] public int meanHeightDistance = 1; // in pixels
+    [Range(1, 512)] public int slopeDistance = 1; // in pixels
     [Range(0, 1)] public float waterThreshold = 0.99f;
 
     [Header("Humidity Parameters")]
@@ -37,38 +38,35 @@ public class HumidityDistribuition : MonoBehaviour
     [Header("Positive And Negative Influences")]
     [Range(0, 20)] public float relativeHeightWeight = 1f;
     [Header("Positive Influences")]
-    [Range(0, 20)] public float waterbodiesWeight = 1f;
+    [Range(0, 20)] public float waterBodiesWeight = 1f;
     [Header("Negative Influences")]
     [Range(0, 20)] public float slopeWeight = 0.5f;
 
     [Space]
-    //public RawImage heightMapRawImg;
-    //public RawImage waterMapRawImg;
-    //public RawImage waterSpreadRawImg;
-    //public RawImage meanHeightRawImg;
-    //public RawImage relativeHeightRawImg;
-    //public RawImage slopeRawImg;
-    //public RawImage humidityRawImg;
-
-    [Space]
+    public ComputeShader meanHeightCompute;
+    public ComputeShader slopeCompute;
     public ComputeShader waterSpreadCompute;
-
-    public ComputeBuffer waterBuffer;
-    public ComputeBuffer waterSpreadBuffer;
     #endregion
 
     #region PRIVATE VARIABLES
     private const float MAX_SLOPE = 0.5f;
 
-    //private RenderTexture waterSpreadRT;
+    private ComputeBuffer heightBuffer;
+    private ComputeBuffer waterBuffer;
+    private ComputeBuffer vPassBuffer;
+    private ComputeBuffer hPassBuffer;
 
-    //private Texture2D heightMapTex;
-    //private Texture2D waterMapTex;
-    //private Texture2D waterSpreadTex;
-    //private Texture2D meanHeightTex;
-    //private Texture2D relativeHeightTex;
-    //private Texture2D slopeTex;
-    //private Texture2D humidityTex;
+    private ComputeBuffer slopeBuffer;
+    private ComputeBuffer meanHeightBuffer;
+    private ComputeBuffer waterSpreadBuffer;
+
+    private int slopeKernelHandle;
+
+    private int meanHeightFirstPassKernelHandle;
+    private int meanHeightSecondPassKernelHandle;
+
+    private int waterSpreadFirstPassKernelHandle;
+    private int waterSpreadSecondPassKernelHandle;
 
     /// <summary>
     /// Size of a tile in pixels
@@ -109,19 +107,78 @@ public class HumidityDistribuition : MonoBehaviour
         TexManager.UpdateHeightmapTexture();
         TexManager.UpdateWatermapTexture();
 
-        //if (TexManager.IsHeightDataLoaded)
-        //{
-        //    //tileSize = TexManager.Width / horizontalTiles;
-        //    //hvTiles = new Vector2(horizontalTiles, TexManager.Height / tileSize);
-        //}
+        InitBuffers();
+    }
 
-        if(TexManager.IsWaterDataLoaded)
+    private void InitBuffers()
+    {
+        if (heightBuffer == null)
+            heightBuffer = new ComputeBuffer(TexManager.Resolution, sizeof(float), ComputeBufferType.Default);
+        if (waterBuffer == null)
+            waterBuffer = new ComputeBuffer(TexManager.Resolution, sizeof(float), ComputeBufferType.Default);
+        if (vPassBuffer == null)
+            vPassBuffer = new ComputeBuffer(TexManager.Resolution, sizeof(float), ComputeBufferType.Default);
+        if (hPassBuffer == null)
+            hPassBuffer = new ComputeBuffer(TexManager.Resolution, sizeof(float), ComputeBufferType.Default);
+        if (meanHeightBuffer == null)
+            meanHeightBuffer = new ComputeBuffer(TexManager.Resolution, sizeof(float), ComputeBufferType.Default);
+        if (slopeBuffer == null)
+            slopeBuffer = new ComputeBuffer(TexManager.Resolution, sizeof(float), ComputeBufferType.Default);
+        if (waterSpreadBuffer == null)
+            waterSpreadBuffer = new ComputeBuffer(TexManager.Resolution, sizeof(float), ComputeBufferType.Default);
+
+        // Mean Height
+        meanHeightFirstPassKernelHandle = meanHeightCompute.FindKernel("FirstPass");
+        meanHeightSecondPassKernelHandle = meanHeightCompute.FindKernel("SecondPass");
+
+        meanHeightCompute.SetInts("Size", new int[] { TexManager.Width, TexManager.Height });
+
+        // buffers
+        meanHeightCompute.SetBuffer(meanHeightFirstPassKernelHandle, "HeightData", heightBuffer);
+        meanHeightCompute.SetBuffer(meanHeightFirstPassKernelHandle, "VPass", vPassBuffer);
+        meanHeightCompute.SetBuffer(meanHeightFirstPassKernelHandle, "HPass", hPassBuffer);
+
+        meanHeightCompute.SetBuffer(meanHeightSecondPassKernelHandle, "HeightData", heightBuffer);
+        meanHeightCompute.SetBuffer(meanHeightSecondPassKernelHandle, "VPass", vPassBuffer);
+        meanHeightCompute.SetBuffer(meanHeightSecondPassKernelHandle, "HPass", hPassBuffer);
+        meanHeightCompute.SetBuffer(meanHeightSecondPassKernelHandle, "MeanHeightData", meanHeightBuffer);
+
+        // Slope
+        slopeKernelHandle = slopeCompute.FindKernel("CSMain");
+
+        slopeCompute.SetInts("Size", new int[] { TexManager.Width, TexManager.Height });
+        // buffers
+        slopeCompute.SetBuffer(slopeKernelHandle, "HeightData", heightBuffer);
+        slopeCompute.SetBuffer(slopeKernelHandle, "SlopeData", slopeBuffer);
+
+        // Water Spread
+        waterSpreadFirstPassKernelHandle = waterSpreadCompute.FindKernel("FirstPass");
+        waterSpreadSecondPassKernelHandle = waterSpreadCompute.FindKernel("SecondPass");
+
+        waterSpreadCompute.SetInts("Size", new int[] { TexManager.Width, TexManager.Height });
+
+        // buffers
+        waterSpreadCompute.SetBuffer(waterSpreadFirstPassKernelHandle, "WaterData", waterBuffer);
+        waterSpreadCompute.SetBuffer(waterSpreadFirstPassKernelHandle, "VPass", vPassBuffer);
+        waterSpreadCompute.SetBuffer(waterSpreadFirstPassKernelHandle, "HPass", hPassBuffer);
+
+        waterSpreadCompute.SetBuffer(waterSpreadSecondPassKernelHandle, "WaterData", waterBuffer);
+        waterSpreadCompute.SetBuffer(waterSpreadSecondPassKernelHandle, "VPass", vPassBuffer);
+        waterSpreadCompute.SetBuffer(waterSpreadSecondPassKernelHandle, "HPass", hPassBuffer);
+        waterSpreadCompute.SetBuffer(waterSpreadSecondPassKernelHandle, "WaterSpreadData", waterSpreadBuffer);
+
+        if (TexManager.IsHeightDataLoaded)
         {
-            if(waterBuffer == null)
-                waterBuffer = new ComputeBuffer(waterData.Length, sizeof(float), ComputeBufferType.Default);
-            if (waterSpreadBuffer == null)
-                waterSpreadBuffer = new ComputeBuffer(waterData.Length, sizeof(float), ComputeBufferType.Default);
+            meanHeightData = new float[TexManager.Resolution];
+            relativeHeightData = new float[TexManager.Resolution];
+            slopeData = new float[TexManager.Resolution];
+            humidityData = new float[TexManager.Resolution];
+            heightBuffer.SetData(heightData);
+        }
 
+        if (TexManager.IsWaterDataLoaded)
+        {
+            waterSpreadData = new float[TexManager.Resolution];
             waterBuffer.SetData(waterData);
         }
     }
@@ -149,15 +206,29 @@ public class HumidityDistribuition : MonoBehaviour
     {
         if (TexManager.IsHeightDataLoaded)
         {
-            meanHeightData = new float[TexManager.Resolution];
+            Profiler.BeginSample("Mean Height Calculation CPU");
 
             int[,] indexes;
-
-            // TODO: implement all this stuff in a compute shader
 
             GetTilesCornersIndexes(out indexes);
             CalculateCornersMeans(heightData, meanHeightData, indexes);
             InterpolateValues(meanHeightData, indexes);
+
+            Profiler.EndSample();
+
+            Profiler.BeginSample("Mean Height Calculation GPU");
+
+            meanHeightCompute.SetInt("Distance", meanHeightDistance);
+
+            // first pass
+            meanHeightCompute.Dispatch(meanHeightFirstPassKernelHandle, TexManager.Height / 8, TexManager.Width / 8, 1);
+            // second pass
+            meanHeightCompute.Dispatch(meanHeightSecondPassKernelHandle, TexManager.Height / 8, TexManager.Width / 8, 1);
+
+            Profiler.EndSample();
+
+            meanHeightBuffer.GetData(meanHeightData);
+
 
             TexManager.UpdateMeanHeightTexture(meanHeightData);
         }
@@ -172,10 +243,12 @@ public class HumidityDistribuition : MonoBehaviour
     {
         if (TexManager.IsHeightDataLoaded && meanHeightData != null)
         {
-            relativeHeightData = new float[TexManager.Resolution];
+            Profiler.BeginSample("Relative Height Calculation CPU");
 
             for (int i = 0; i < heightData.Length; i++)
                 relativeHeightData[i] = ((heightData[i] - meanHeightData[i]) + 1f) * 0.5f;
+
+            Profiler.EndSample();
 
             TexManager.UpdateRelativeHeightTexture(relativeHeightData);
         }
@@ -190,7 +263,9 @@ public class HumidityDistribuition : MonoBehaviour
     {
         if (TexManager.IsHeightDataLoaded)
         {
-            slopeData = new float[TexManager.Resolution];
+            Profiler.BeginSample("Slope Calculation CPU");
+
+            slopeData = new float[heightData.Length];
 
             for (int i = 0; i < TexManager.Height; i++)
             {
@@ -199,6 +274,17 @@ public class HumidityDistribuition : MonoBehaviour
                     slopeData[To1DIndex(i, j, TexManager.Width)] = CalculatePixelSlope(heightData, i, j);
                 }
             }
+
+            Profiler.EndSample();
+            
+            Profiler.BeginSample("Slope Calculation GPU");
+
+            slopeCompute.SetInt("Distance", slopeDistance);
+            slopeCompute.Dispatch(slopeKernelHandle, TexManager.Height / 8, TexManager.Width / 8, 1);
+
+            Profiler.EndSample();
+
+            slopeBuffer.GetData(slopeData);
 
             TexManager.UpdateSlopeTexture(slopeData);
         }
@@ -213,66 +299,24 @@ public class HumidityDistribuition : MonoBehaviour
     {
         if (TexManager.IsWaterDataLoaded)
         {
-            waterSpreadData = new float[waterData.Length];
-            
-            //float[] kernel = new float[spread.maxDistance * 2 + 1];
-            //for (int k = 0; k <= spread.maxDistance; k++)
-            //{
-            //    float value = spread.horizontal.Evaluate((float)k / (float)spread.maxDistance);
-            //    kernel[spread.maxDistance + k] = value;
-            //    kernel[spread.maxDistance - k] = value;
-            //}
+            Profiler.BeginSample("Water Spread Calculation GPU");
 
-            int kernelHandleV = waterSpreadCompute.FindKernel("Vert");
-            int kernelHandleH = waterSpreadCompute.FindKernel("Hor");
-
-
-
-            waterSpreadCompute.SetInt("Width", TexManager.Width);
             waterSpreadCompute.SetInt("Distance", spread.maxDistance);
-            waterSpreadCompute.SetBuffer(kernelHandleV, "WaterData", waterBuffer);
-            waterSpreadCompute.SetBuffer(kernelHandleV, "WaterSpreadData", waterSpreadBuffer);
 
-            ComputeBuffer auxBuffer = new ComputeBuffer(1, 4);
-            waterSpreadCompute.SetBuffer(kernelHandleV, "auxBuffer", auxBuffer);
+            // first pass
+            waterSpreadCompute.Dispatch(waterSpreadFirstPassKernelHandle, TexManager.Height / 8, TexManager.Width / 8, 1);
+            // second pass
+            waterSpreadCompute.Dispatch(waterSpreadSecondPassKernelHandle, TexManager.Height / 8, TexManager.Width / 8, 1);
 
-            waterSpreadCompute.Dispatch(kernelHandleV, TexManager.Height / 8, TexManager.Width / 8, 1);
-
-            float[] a = new float[1];
-            auxBuffer.GetData(a);
-
-
-
-
-
-
-            waterSpreadCompute.SetBuffer(kernelHandleH, "WaterData", waterBuffer);
-            waterSpreadCompute.SetBuffer(kernelHandleH, "WaterSpreadData", waterSpreadBuffer);
-
-
-
-            //AsyncGPUReadback.Request()
-
-            //AsyncGPUReadbackRequest re = new AsyncGPUReadbackRequest();
-            //re.done
-
-
+            Profiler.EndSample();
 
             waterSpreadBuffer.GetData(waterSpreadData);
 
-            //float[] result = new float[waterData.Length];
-            //waterSpreadBuffer.GetData(result);
-
-            for (int i = 0; i < 50; i++)
-            {
-                Debug.Log(waterSpreadData[i]);
-            }
-
-
             TexManager.UpdateWaterSpreadTexture(waterSpreadData);
+
         }
         else
-            Debug.LogError("Slope not calculated.");
+            Debug.LogError("Water Spread not calculated.");
     }
 
     /// <summary>
@@ -280,12 +324,12 @@ public class HumidityDistribuition : MonoBehaviour
     /// </summary>
     private void OnDestroy()
     {
-        //if (waterSpreadRT != null)
-        //{
-        //    waterSpreadRT.Release();
-        //    waterSpreadRT = null;
-
+        heightBuffer.Release();
         waterBuffer.Release();
+        vPassBuffer.Release();
+        hPassBuffer.Release();
+        meanHeightBuffer.Release();
+        slopeBuffer.Release();
         waterSpreadBuffer.Release();
     }
 
@@ -296,6 +340,8 @@ public class HumidityDistribuition : MonoBehaviour
     {
         if (TexManager.IsHeightDataLoaded && meanHeightData != null && relativeHeightData != null && slopeData != null)
         {
+            Profiler.BeginSample("Humidity Calculation CPU");
+
             humidityData = new float[TexManager.Resolution];
 
             for (int k = 0; k < humidityData.Length; k++)
@@ -304,10 +350,14 @@ public class HumidityDistribuition : MonoBehaviour
 
                 float relativeHumidity = relativeHeightWeight * relativeHeightInfluence.Evaluate(relativeHeightData[k]); //(1f - (relativeHeightData[k]));
 
-                float finalHumidity = baseHumidity * (1 + relativeHumidity - slopeWeight * (slopeData[k])) + 0.1f * relativeHumidity;
+                float water = waterSpreadData[k] * spread.vertical.Evaluate(heightData[k]);
+
+                float finalHumidity = baseHumidity * (1 + relativeHumidity - slopeWeight * (slopeData[k])) + 0.1f * relativeHumidity + water * waterBodiesWeight + waterData[k];
 
                 humidityData[k] = Mathf.Clamp01(finalHumidity);
             }
+
+            Profiler.EndSample();
 
             TexManager.UpdateHumidityTexture(humidityData);
         }
@@ -434,7 +484,7 @@ public class HumidityDistribuition : MonoBehaviour
 
         return Mathf.Sqrt((slopeX * slopeX) + (slopeY * slopeY)) / MAX_SLOPE;
     }
-    
+
     /// <summary>
     /// 
     /// </summary>

@@ -1,0 +1,50 @@
+﻿#pragma kernel FirstPass
+#pragma kernel SecondPass
+
+#include "HumidityUtils.cginc"
+
+RWStructuredBuffer<float> WaterSpreadData;
+
+[numthreads(GROUP_SIZE, GROUP_SIZE, 1)]
+void FirstPass(uint3 dispid : SV_DispatchThreadID)
+{
+	int i = To1DIndex(dispid.y, dispid.x, Size.x);
+	float dst = float(Distance);
+	float accum = 0.0;
+
+	for (int k = 1; k <= Distance; k++)
+	{
+		float w = 1.0 - (float(k) / dst);
+		accum += 2.0 * w;
+
+		VPass[i] += WaterData[To1DIndex(max(0, int(dispid.y) - k), dispid.x, Size.x)] * w;
+		VPass[i] += WaterData[To1DIndex(min((Size.y - 1), dispid.y + k), dispid.x, Size.x)] * w;
+
+		HPass[i] += WaterData[To1DIndex(dispid.y, max(0, int(dispid.x) - k), Size.x)] * w;
+		HPass[i] += WaterData[To1DIndex(dispid.y, min((Size.x - 1), dispid.x + k), Size.x)] * w;
+	}
+
+	VPass[i] /= accum;
+	HPass[i] /= accum;
+}
+
+[numthreads(GROUP_SIZE, GROUP_SIZE, 1)]
+void SecondPass(uint3 dispid : SV_DispatchThreadID)
+{
+	int i = To1DIndex(dispid.y, dispid.x, Size.x);
+	float dst = float(Distance);
+	float accum = 0.0;
+
+	for (int k = 1; k <= Distance; k++)
+	{
+		float w = 1.0 - (float(k) / dst);
+		accum += 2.0 * w;
+
+		WaterSpreadData[i] += (VPass[To1DIndex(dispid.y, max(0, int(dispid.x) - k), Size.x)]
+			+ HPass[To1DIndex(max(0, int(dispid.y) - k), dispid.x, Size.x)]) * w;
+		WaterSpreadData[i] += (VPass[To1DIndex(dispid.y, min((Size.x - 1), dispid.x + k), Size.x)]
+			+ HPass[To1DIndex(min((Size.y - 1), dispid.y + k), dispid.x, Size.x)]) * w;
+	}
+
+	WaterSpreadData[i] = (WaterSpreadData[i] / accum) + WaterData[i];
+}

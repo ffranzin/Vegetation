@@ -79,10 +79,10 @@ public class RasterReader
         Band band = dataset.GetRasterBand(1);
         band.GetBlockSize(out blockSizeX, out blockSizeY);
 
-        Debug.Log(string.Format("Driver: {0}/{1}", dataset.GetDriver().ShortName, dataset.GetDriver().LongName));
-        Debug.Log(string.Format("Size is {0} x {1} x {2}", dataset.RasterXSize, dataset.RasterYSize, dataset.RasterCount));
-        Debug.Log(string.Format("Band Type={0}, xSize={1}, ySize={2}, BlockSizeX={3}, BlockSizeY={4}",
-            Gdal.GetDataTypeName(band.DataType), band.XSize, band.YSize, blockSizeX, blockSizeY));
+        //Debug.Log(string.Format("Driver: {0}/{1}", dataset.GetDriver().ShortName, dataset.GetDriver().LongName));
+        //Debug.Log(string.Format("Size is {0} x {1} x {2}", dataset.RasterXSize, dataset.RasterYSize, dataset.RasterCount));
+        //Debug.Log(string.Format("Band Type={0}, xSize={1}, ySize={2}, BlockSizeX={3}, BlockSizeY={4}",
+        //    Gdal.GetDataTypeName(band.DataType), band.XSize, band.YSize, blockSizeX, blockSizeY));
 
         { // not used
             // metadata
@@ -98,35 +98,35 @@ public class RasterReader
 
         // statistics
         CPLErr err = band.ComputeStatistics(false, out min, out max, out mean, out stdDev, null, null);
-        if (err == CPLErr.CE_None)
-            Debug.Log(string.Format("Min={0:N2}, Max={1:N2}, Mean={1:N2}, StdDev={1:N2}", min, max, mean, stdDev));
-        else
-            Debug.Log("Error computing statistics :: " + err.ToString());
+        //if (err == CPLErr.CE_None)
+        //    Debug.Log(string.Format("Min={0:N2}, Max={1:N2}, Mean={1:N2}, StdDev={1:N2}", min, max, mean, stdDev));
+        //else
+        //    Debug.Log("Error computing statistics :: " + err.ToString());
 
         // overviews
-        if (band.GetOverviewCount() > 0)
-            Debug.Log("Band overview count: " + band.GetOverviewCount());
-        else
-            Debug.Log("No overviews");
+        //if (band.GetOverviewCount() > 0)
+        //    Debug.Log("Band overview count: " + band.GetOverviewCount());
+        //else
+        //    Debug.Log("No overviews");
 
         // colortable
-        ColorTable colortable = band.GetRasterColorTable();
-        if (colortable != null)
-            Debug.Log("Band has a ColorTable with " + band.GetRasterColorTable().GetCount() + " entries");
-        else
-            Debug.Log("No ColorTable");
+        //ColorTable colortable = band.GetRasterColorTable();
+        //if (colortable != null)
+        //    Debug.Log("Band has a ColorTable with " + band.GetRasterColorTable().GetCount() + " entries");
+        //else
+        //    Debug.Log("No ColorTable");
 
         // extract data
         float[] rasterData = new float[rasterSizeX * rasterSizey];
         band.ReadRaster(0, 0, rasterSizeX, rasterSizey, rasterData, rasterSizeX, rasterSizey, 0, 0);
 
-        {// print sample data
-            StringBuilder sb = new StringBuilder();
-            sb.Append(path + " data " + rasterData.Length.ToString() + " :: ");
-            for (int i = 0; i < 50; i++)
-                sb.Append(rasterData[i].ToString() + " | ");
-            Debug.Log(sb.ToString());
-        }
+        //{// print sample data
+        //    StringBuilder sb = new StringBuilder();
+        //    sb.Append(path + " data " + rasterData.Length.ToString() + " :: ");
+        //    for (int i = 0; i < 20; i++)
+        //        sb.Append(rasterData[i].ToString() + " | ");
+        //    Debug.Log(sb.ToString());
+        //}
 
         rasterInfo = new RasterInfo()
         {
