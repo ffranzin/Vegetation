@@ -13,7 +13,6 @@ Shader "Custom/MyCustomTerrain" {
 		_GroundTex("GroundTex", 2D) = "white" {}
 		_GroundNormalTex("GroundNormalTex", 2D) = "white" {}
 
-		_HeightMap("HeightMap", 2D) = "white" {}
 		_Glossiness("Smoothness", Range(0,1)) = 0.5
 		_Metallic("Metallic", Range(0,1)) = 0.0
 		_EdgeLength("EdgeLength", Range(1,100)) = 5.0
@@ -35,7 +34,7 @@ Shader "Custom/MyCustomTerrain" {
 
 		sampler2D _MainTex;
 		sampler2D _NoiseTex;
-		sampler2D _HeightMap;
+		
 		
 		sampler2D _GroundTex;
 		sampler2D _GrassTex;
@@ -56,11 +55,14 @@ Shader "Custom/MyCustomTerrain" {
 		fixed4 _Color;
 		float _EdgeLength;
 
+
+		uniform sampler2D _HeightMap; 
 		uniform float TERRAIN_HEIGHT_MULTIPLIER;
 		uniform float TERRAIN_HEIGHT_LAKE;
 		uniform float ROAD_WIDTH;
 		uniform float4 ROAD_SEGMENTS[100];
 		uniform int ROAD_SEGMENTS_COUNT;
+
 
 		float4 tessDistance (appdata_full v0, appdata_full v1, appdata_full v2) 
 		{
@@ -103,17 +105,22 @@ Shader "Custom/MyCustomTerrain" {
 			return false;
 		}
 
+		
 
 
 		void vert(inout appdata_full v)
 		{
-			float h = TERRAIN_HEIGHT_MULTIPLIER;
-			float2 wPos = mul(unity_ObjectToWorld, float4(v.vertex.xyz, 1)).xz;
+			//float h = TERRAIN_HEIGHT_MULTIPLIER;
+			//float2 wPos = mul(unity_ObjectToWorld, float4(v.vertex.xyz, 1)).xz;
 
-			if (IsInsideRoad(wPos))
-				h -= 3;
+			//if (IsInsideRoad(wPos))
+			//	h -= 3;
 			
-			v.vertex.z += tex2Dlod(_HeightMap, float4(v.texcoord.xy, 0, 0)).r *TERRAIN_HEIGHT_MULTIPLIER;
+			float2 uv = v.texcoord.xy;
+			//uv.y = 1 - uv.y;
+			//uv.x = 1 - uv.x;
+
+			v.vertex.z += tex2Dlod(_HeightMap, float4(uv, 0, 0)).r * TERRAIN_HEIGHT_MULTIPLIER;
 		}
 
 
@@ -124,6 +131,8 @@ Shader "Custom/MyCustomTerrain" {
 			float4 n;
 
 			c = tex2D(_GroundTex, IN.uv_MainTex * 15);
+			c.r =  tex2D(_HeightMap, IN.uv_MainTex);
+
 			/*
 			if (IsInsideRoad(IN.worldPos.xz))
 			{

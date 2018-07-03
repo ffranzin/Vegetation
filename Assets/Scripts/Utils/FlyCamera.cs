@@ -36,32 +36,8 @@ public class FlyCamera : MonoBehaviour
 
 		if (Input.GetKey(KeyCode.X))
 			MatchSurfaceNormal(1f);
-
-		//dvec3 planetCenter = SphericalTerrain.centerWithOffset;
-		//double dist = dvec3.Distance(planetCenter, transform.position.ToDvec3()) - SphericalTerrain.Radius;
-
-		// Transform the camera to match the planet's surface orientation
-		//if (dist < heightToMatchSurfaceUp)
-		//	MatchSurfaceNormal(2f);
-
-		//ProcessJoystick();
+        
 		ProcessMouse();
-
-		//if (dynamicNearPlane)
-		//{
-		//	dvec3 camPosWithoutOffset = OriginOffsetManager.RemoveOffset(Camera.main.transform.position.ToDvec3());
-		//	double d = dvec3.Distance(camPosWithoutOffset, SphericalTerrain.centerWithoutOffset);
-		//	double near = d - SphericalTerrain.DefaultMaxRadius;
-		//	near *= 0.5;
-
-		//	if (near < 1)
-		//		near = 1;
-		//	if (near > 100000)
-		//		near = 100000;
-
-		//	Camera.main.nearClipPlane = (float)near;
-		//	Camera.main.farClipPlane = (float)(d + SphericalTerrain.DefaultMaxRadius);
-		//}
 
 		float distance = (transform.position - lastPosition).magnitude;
 		velocity = distance / Time.deltaTime;
@@ -148,11 +124,11 @@ public class FlyCamera : MonoBehaviour
 		{
 			p_Velocity += new Vector3(1, 0, 0);
 		}
-		if (Input.GetKey(KeyCode.R))
+		if (Input.GetKey(KeyCode.Q))
 		{
 			p_Velocity += new Vector3(0, 1, 0);
 		}
-		if (Input.GetKey(KeyCode.F))
+		if (Input.GetKey(KeyCode.E))
 		{
 			p_Velocity += new Vector3(0, -1, 0);
 		}

@@ -1,0 +1,125 @@
+﻿// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel ComputePosition
+#pragma kernel ComputeSplat
+
+#include "Utils.cginc"
+#include "StructuresTrees.cginc"
+
+
+float3 _tmpWriteInChannel;
+
+RWTexture2D <float4> _texture;
+
+RWStructuredBuffer<float2> _positionsBuffer;
+RWStructuredBuffer<float2> _positionsPerTreeBuffer;
+RWStructuredBuffer<int> _positionsPerTreeIndexBuffer;
+
+RWStructuredBuffer<QuadTreeInfo> _qti;
+
+int posCount;
+
+
+void EvaluatePosition(int r)
+{
+	for(int i = 0; i < posCount; i++)
+	{
+		int currentIndex = _positionsPerTreeIndexBuffer[r];
+
+		_positionsPerTreeBuffer[r * 1000 + currentIndex] = _positionsBuffer[i];
+
+		_positionsPerTreeIndexBuffer[r] ++;
+	}
+}
+
+
+
+[numthreads(1,1,1)]
+void ComputePosition (uint3 id : SV_DispatchThreadID)
+{
+	int n = 50;
+
+	for(int i = 0; i < n; i++)
+	{
+		_positionsBuffer[i] = NormalizedPosToScaledWorldPos(_GlobalPrecomputedPositionL1[i], 
+															_qti[0].currentNodeWorldOrigin, 
+															_qti[0].currentNodeWorldSize);
+		posCount ++;
+	}
+
+	EvaluatePosition(1);
+}
+
+
+
+float4 teste(float2 id)
+{
+	//Get my real world position (RWP)
+	float2 uvCurrentPos		 = id / _qti[0].currentNodeAtlasSize;
+	float2 uvVurrentWorldPos = _qti[0].currentNodeWorldOrigin + uvCurrentPos * _qti[0].currentNodeWorldSize;
+	
+	//Get the correspondent uv of RWP in upper level node 
+	float2 uvInUpperLevel = (uvVurrentWorldPos - _qti[0].upperNodeWorldOrigin) / _qti[0].upperNodeWorldSize;
+
+	//pixel position of RWP in upper level
+	uvInUpperLevel = _qti[0].upperNodeAtlasOrigin + uvInUpperLevel * _qti[0].upperNodeAtlasSize;
+
+	return _texture[uvInUpperLevel];
+}
+
+
+/*
+	float2 currentNodeAtlasOrigin;
+    float currentNodeAtlasSize;
+    float2 currentNodeWorldOrigin;
+    float currentNodeWorldSize;
+
+    float2 upperNodeAtlasOrigin;
+    float upperNodeAtlasSize;
+    float2 upperNodeWorldOrigin;
+    float upperNodeWorldSize;
+*/
+
+
+float2 tmpPositionColor(float2 id)
+{
+	float a = id.x / _qti[0].currentNodeAtlasSize;
+	float b = id.y / _qti[0].currentNodeAtlasSize;
+
+	a = a < 0.5 ? 0 : 1;
+	b = b < 0.5 ? 0 : 1;
+
+	return float2(a, b);
+}
+
+
+[numthreads(8,8,1)]
+void ComputeSplat (uint3 id : SV_DispatchThreadID)
+{
+	
+	float smallDist = 99999;
+
+	for(int i = 0; i < 50; i++)
+	{
+		float2 normPos = WorldPosToNormalizedPos(_positionsBuffer[i], 
+												 _qti[0].currentNodeWorldOrigin, 
+												 _qti[0].currentNodeWorldSize);
+
+		float dist = length(id.xy - (normPos * _qti[0].currentNodeAtlasSize));
+
+		smallDist = smallDist > dist ? dist : smallDist;
+	}
+
+	smallDist = 1 - Remap(smallDist, 1, _qti[0].treeRadius, 0.0, 1.0);
+
+	float3 color = float3(tmpPositionColor(id), 1);
+
+
+	_texture[id.xy+ _qti[0].currentNodeAtlasOrigin.xy] = float4(float3(color * smallDist), 1);
+	//_texture[id.xy+ _qti[0].currentNodeAtlasOrigin.xy] = float4(float3(_tmpWriteInChannel * smallDist), 1);
+
+
+	if(_qti[0].hasUpper == 1)
+		_texture[id.xy + _qti[0].currentNodeAtlasOrigin.xy] += teste(id.xy);
+		
+}
+

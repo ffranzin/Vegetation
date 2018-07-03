@@ -1,28 +1,29 @@
-﻿using System.Collections;
+﻿
 using System.Collections.Generic;
 using UnityEngine;
 
 public class Utils : MonoBehaviour {
     
-    public static Vector3 RandomPosInsideBound(Bounds b)
+    public static Vector3 RandomPosInsideBound(Bounds b, float boundBorder = 0)
     {
-        return new Vector3(Random.Range(b.min.x, b.max.x), 0, Random.Range(b.min.z, b.max.z));
+        return new Vector3( Random.Range(b.min.x + boundBorder, b.max.x - boundBorder), 0,
+                            Random.Range(b.min.z + boundBorder, b.max.z - boundBorder));
     }
 
 
     /// <summary>
     /// Generate 'nPositions' inside bound 'b', considering 'minDist'. 
     /// </summary>
-    public static List<Vector3> GenerateRandomPosInsideBound(Bounds b, int nPositions, float minDist)
+    public static List<Vector3> GenerateRandomPosInsideBound(Bounds b, int nPositions, float minDistBetweenPos, float distToBorder)
     {
         int attemps = 2 * nPositions;
         List<Vector3> positions = new List<Vector3>();
 
         while (positions.Count < nPositions && attemps > 0)
         {
-            Vector3 pos = RandomPosInsideBound(b);
+            Vector3 pos = RandomPosInsideBound(b, distToBorder);
 
-            if (!positions.Exists(p => (p - pos).magnitude < minDist))
+            if (!positions.Exists(p => (p - pos).magnitude < minDistBetweenPos))
                 positions.Add(pos);
 
             attemps--;
@@ -35,6 +36,7 @@ public class Utils : MonoBehaviour {
     public static void ShowBoundLines(Bounds b, Color c, float duration = 0 )
     {
         float h = TerrainManager.TERRAIN_HEIGHT_MULTIPLIER;
+        
         Debug.DrawLine(new Vector3(b.min.x, h, b.max.z), new Vector3(b.max.x, h, b.max.z), c, duration); // horizontal top
         Debug.DrawLine(new Vector3(b.max.x, h, b.min.z), new Vector3(b.min.x, h, b.min.z), c, duration); // horizontal bottom
 
@@ -60,6 +62,4 @@ public class Utils : MonoBehaviour {
 
         return Vector3.Cross((l1 - l0).normalized, p - l0).magnitude;
     }
-
-
 }
