@@ -11,6 +11,386 @@ using UnityEngine.Profiling;
 using UnityEngine.UI;
 using UnityEngine.Rendering;
 
+//[ExecuteInEditMode]
+[RequireComponent(typeof(TextureManager))]
+public class MoistureDistribuition : MonoBehaviour
+{
+    #region CUSTOM_STRUCTS
+    [System.Serializable]
+    [StructLayout(LayoutKind.Sequential)]
+    public struct ComputeParameters
+    {
+        // Distances
+        [Header("Distances in Pixels")]
+        [Range(1, 512)] public float d_MeanHeight;
+        [Range(1, 512)] public float d_Slope;
+        [Range(1, 512)] public float d_WaterSpread;
+
+        // Weights
+        [Header("Influence Curves Weights")]
+        [Range(0, 10)] public float w_Height;
+        [Range(0, 10)] public float w_RelativeHeight;
+        [Range(0, 10)] public float w_Slope;
+        [Range(0, 10)] public float w_WaterSpread;
+
+        [Header("Sizes of the textures")]
+        public Vector2 s_Atlas;
+        public Vector2 s_Splat; // factor of 8
+    }
+
+    [System.Serializable]
+    public struct InfluenceCurves
+    {
+        [Header("Moisture Influence Curves")]
+        public AnimationCurve heightInfluence;
+        public AnimationCurve relativeHeightInfluence;
+        public AnimationCurve slopeInfluence;
+        [Tooltip("Horizontal Water Spread")]
+        public AnimationCurve waterHInfluence;
+        [Tooltip("Vertical Water Spread")]
+        public AnimationCurve waterVInfluence;
+
+        [HideInInspector] public ComputeBuffer heightBuffer;
+        [HideInInspector] public ComputeBuffer relativeHBuffer;
+        [HideInInspector] public ComputeBuffer slopeBuffer;
+        [HideInInspector] public ComputeBuffer waterHBuffer;
+        [HideInInspector] public ComputeBuffer waterVBuffer;
+
+        public void UpdateBuffers()
+        {
+            Profiler.BeginSample("Update Influence Curves");
+
+            if (heightBuffer == null) heightBuffer = new ComputeBuffer(CURVE_BUFFER_SIZE, sizeof(float), ComputeBufferType.Default);
+            if (relativeHBuffer == null) relativeHBuffer = new ComputeBuffer(CURVE_BUFFER_SIZE, sizeof(float), ComputeBufferType.Default);
+            if (slopeBuffer == null) slopeBuffer = new ComputeBuffer(CURVE_BUFFER_SIZE, sizeof(float), ComputeBufferType.Default);
+            if (waterHBuffer == null) waterHBuffer = new ComputeBuffer(CURVE_BUFFER_SIZE, sizeof(float), ComputeBufferType.Default);
+            if (waterVBuffer == null) waterVBuffer = new ComputeBuffer(CURVE_BUFFER_SIZE, sizeof(float), ComputeBufferType.Default);
+
+            float[] heightAux = new float[CURVE_BUFFER_SIZE];
+            float[] relativeHAux = new float[CURVE_BUFFER_SIZE];
+            float[] slopeAux = new float[CURVE_BUFFER_SIZE];
+            float[] waterHAux = new float[CURVE_BUFFER_SIZE];
+            float[] waterVAux = new float[CURVE_BUFFER_SIZE];
+
+            for (int i = 0; i < CURVE_BUFFER_SIZE; i++)
+            {
+                float time = (float)(i + 1.0f) / (float)CURVE_BUFFER_SIZE;
+
+                heightAux[i] = heightInfluence.Evaluate(time);
+                relativeHAux[i] = relativeHeightInfluence.Evaluate(time);
+                slopeAux[i] = slopeInfluence.Evaluate(time);
+                waterHAux[i] = waterHInfluence.Evaluate(time);
+                waterVAux[i] = waterVInfluence.Evaluate(time);
+            }
+
+            heightBuffer.SetData(heightAux);
+            relativeHBuffer.SetData(relativeHAux);
+            slopeBuffer.SetData(slopeAux);
+            waterHBuffer.SetData(waterHAux);
+            waterVBuffer.SetData(waterVAux);
+
+            Profiler.EndSample();
+        }
+
+        public void ReleaseBuffers()
+        {
+            if (heightBuffer != null) heightBuffer.Release();
+            if (relativeHBuffer != null) relativeHBuffer.Release();
+            if (slopeBuffer != null) slopeBuffer.Release();
+            if (waterHBuffer != null) waterHBuffer.Release();
+            if (waterVBuffer != null) waterVBuffer.Release();
+
+            heightBuffer = null;
+            relativeHBuffer = null;
+            slopeBuffer = null;
+            waterHBuffer = null;
+            waterVBuffer = null;
+        }
+    }
+    #endregion
+
+    #region PUBLIC VARIABLES
+    public ComputeParameters parameters;
+    [Space]
+    public InfluenceCurves curves;
+
+    [Header("Compute Shaders")]
+    public ComputeShader meanHeightCompute;
+    public ComputeShader relativeHeightCompute;
+    public ComputeShader slopeCompute;
+    public ComputeShader waterSpreadCompute;
+    public ComputeShader moistureCompute;
+
+    public int GroupSizeX { get { return (int)parameters.s_Splat.x / THREAD_GROUP_SIZE; } }
+    public int GroupSizeY { get { return (int)parameters.s_Splat.y / THREAD_GROUP_SIZE; } }
+    #endregion
+
+    #region PRIVATE VARIABLES
+    private const int CURVE_BUFFER_SIZE = 128; // same as in the .cginc
+    private const int THREAD_GROUP_SIZE = 8; // same as in the .cginc
+
+    private int meanHFirstKernel;
+    private int meanHSecondKernel;
+    private int relativeHKernel;
+    private int slopeKernel;
+    private int wSpreadFirstKernel;
+    private int wSpreadSecondKernel;
+    private int moistureKernel;
+
+    private ComputeBuffer paramsBuffer;
+
+    private TextureManager m_TexManager;
+    private TextureManager TexManager
+    {
+        get {
+            if (m_TexManager == null)
+                m_TexManager = GetComponent<TextureManager>();
+            return m_TexManager;
+        }
+    }
+    #endregion
+
+    #region PUBLIC METHODS
+    private void Update()
+    {
+        if(Input.GetKeyUp(KeyCode.Space))
+        {
+            Debug.Log("Update");
+            UpdateParameters();
+            UpdateCurves();
+
+            CalculateAll(Vector2.zero);
+        }
+    }
+
+    private void Start()
+    {
+        LoadDataFromFiles();
+
+        parameters.s_Atlas = TexManager.Dimensions;
+
+        InitComputes(parameters.s_Atlas, parameters.s_Splat);
+    }
+
+    public void CalculateAll(Vector2 position)
+    {
+        // Calculate All
+        Profiler.BeginSample("Calculate All GPU");
+
+        UpdatePosition(position);
+
+        CalculateMeanHeight();
+        CalculateRelativeHeight();
+        CalculateSlope();
+        CalculateWaterSpread();
+        CalculateMoisture();
+
+        Profiler.EndSample();
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public void LoadDataFromFiles()
+    {
+        TexManager.LoadHeightData();
+        TexManager.LoadWaterData();
+    }
+
+    private void InitComputes(Vector2 mainTexturesSize, Vector2 mapsTexturesSize)
+    {
+        TexManager.InitTextures(mainTexturesSize, mapsTexturesSize);
+        
+        meanHFirstKernel = meanHeightCompute.FindKernel("FirstPass");
+        meanHSecondKernel = meanHeightCompute.FindKernel("SecondPass");
+        relativeHKernel = relativeHeightCompute.FindKernel("CSMain");
+        slopeKernel = slopeCompute.FindKernel("CSMain");
+        wSpreadFirstKernel = waterSpreadCompute.FindKernel("FirstPass");
+        wSpreadSecondKernel = waterSpreadCompute.FindKernel("SecondPass");
+        moistureKernel = moistureCompute.FindKernel("CSMain");
+
+        UpdateParameters();
+
+        UpdateCurves();
+
+        UpdateTextures();
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public void CleanData()
+    {
+        curves.ReleaseBuffers();
+        if (paramsBuffer != null) paramsBuffer.Release();
+        paramsBuffer = null;
+        TexManager.ReleaseTextures();
+    }
+
+
+    private void OnDestroy()
+    {
+        CleanData();
+    }
+    /// <summary>
+    /// 
+    /// </summary>
+    public void CalculateMeanHeight()
+    {
+        Profiler.BeginSample("Mean Height Calculation GPU");
+
+        meanHeightCompute.Dispatch(meanHFirstKernel, GroupSizeX, GroupSizeY, 1);
+        meanHeightCompute.Dispatch(meanHSecondKernel, GroupSizeX, GroupSizeY, 1);
+
+        Profiler.EndSample();
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public void CalculateRelativeHeight()
+    {
+        Profiler.BeginSample("Relative Height Calculation GPU");
+
+        relativeHeightCompute.Dispatch(relativeHKernel, GroupSizeX, GroupSizeY, 1);
+
+        Profiler.EndSample();
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public void CalculateSlope()
+    {
+        Profiler.BeginSample("Slope Calculation GPU");
+
+        slopeCompute.Dispatch(slopeKernel, GroupSizeX, GroupSizeY, 1);
+
+        Profiler.EndSample();
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public void CalculateWaterSpread()
+    {
+        Profiler.BeginSample("Water Spread Calculation GPU");
+
+        waterSpreadCompute.Dispatch(wSpreadFirstKernel, GroupSizeX, GroupSizeY, 1);
+        waterSpreadCompute.Dispatch(wSpreadSecondKernel, GroupSizeX, GroupSizeY, 1);
+
+        Profiler.EndSample();
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public void CalculateMoisture()
+    {
+        Profiler.BeginSample("Moisture Calculation GPU");
+
+        moistureCompute.Dispatch(moistureKernel, GroupSizeX, GroupSizeY, 1);
+
+        Profiler.EndSample();
+    }
+
+    public void UpdateParameters()
+    {
+        if (paramsBuffer == null) paramsBuffer = new ComputeBuffer(1, 11 * sizeof(float), ComputeBufferType.Default);
+        paramsBuffer.SetData(new ComputeParameters[1] { parameters });
+
+        SetShaderParameters(meanHeightCompute, meanHFirstKernel);
+        SetShaderParameters(meanHeightCompute, meanHSecondKernel);
+        SetShaderParameters(relativeHeightCompute, relativeHKernel);
+        SetShaderParameters(slopeCompute, slopeKernel);
+        SetShaderParameters(waterSpreadCompute, wSpreadFirstKernel);
+        SetShaderParameters(waterSpreadCompute, wSpreadSecondKernel);
+        SetShaderParameters(moistureCompute, moistureKernel);
+    }
+
+    public void UpdateCurves()
+    {
+        curves.UpdateBuffers();
+
+        //SetShaderCurves(meanHeightCompute, meanHFirstKernel); // curves not used in this compute shader
+        //SetShaderCurves(meanHeightCompute, meanHSecondKernel); // curves not used in this compute shader
+        //SetShaderCurves(relativeHeightCompute, relativeHKernel); // curves not used in this compute shader
+        //SetShaderCurves(slopeCompute, slopeKernel); // curves not used in this compute shader
+
+        SetShaderCurves(waterSpreadCompute, wSpreadFirstKernel);
+        SetShaderCurves(waterSpreadCompute, wSpreadSecondKernel);
+        SetShaderCurves(moistureCompute, moistureKernel);
+    }
+    #endregion
+
+    #region PRIVATE METHODS
+    private void UpdateTextures()
+    {
+        SetShaderTextures(meanHeightCompute, meanHFirstKernel);
+        SetShaderTextures(meanHeightCompute, meanHSecondKernel);
+        SetShaderTextures(relativeHeightCompute, relativeHKernel);
+        SetShaderTextures(slopeCompute, slopeKernel);
+        SetShaderTextures(waterSpreadCompute, wSpreadFirstKernel);
+        SetShaderTextures(waterSpreadCompute, wSpreadSecondKernel);
+        SetShaderTextures(moistureCompute, moistureKernel);
+    }
+
+    private void UpdatePosition(Vector2 position)
+    {
+        float[] pos = new float[] { position.x, position.y };
+
+        meanHeightCompute.SetFloats("Pos", pos);
+        relativeHeightCompute.SetFloats("Pos", pos);
+        slopeCompute.SetFloats("Pos", pos);
+        waterSpreadCompute.SetFloats("Pos", pos);
+        moistureCompute.SetFloats("Pos", pos);
+    }
+
+    private void SetShaderParameters(ComputeShader shader, int kernel)
+    {
+        shader.SetBuffer(kernel, "Params", paramsBuffer);
+    }
+
+    private void SetShaderCurves(ComputeShader shader, int kernel)
+    {
+        shader.SetBuffer(kernel, "CurveHeight", curves.heightBuffer);
+        shader.SetBuffer(kernel, "CurveRelativeHeight", curves.relativeHBuffer);
+        shader.SetBuffer(kernel, "CurveSlope", curves.slopeBuffer);
+        shader.SetBuffer(kernel, "CurveWaterH", curves.waterHBuffer);
+        shader.SetBuffer(kernel, "CurveWaterV", curves.waterVBuffer);
+    }
+
+    private void SetShaderTextures(ComputeShader shader, int kernel)
+    {
+        shader.SetTexture(kernel, "TexHeight", TexManager.m_heightMapTex);
+        shader.SetTexture(kernel, "TexMeanH", TexManager.m_meanHeightTex);
+        shader.SetTexture(kernel, "TexRelativeH", TexManager.m_relativeHeightTex);
+        shader.SetTexture(kernel, "TexSlope", TexManager.m_slopeTex);
+        shader.SetTexture(kernel, "TexWater", TexManager.m_waterMapTex);
+        shader.SetTexture(kernel, "TexWSpread", TexManager.m_waterSpreadTex);
+        shader.SetTexture(kernel, "TexMoisture", TexManager.m_moistureTex);
+        shader.SetTexture(kernel, "TexVPass", TexManager.m_vPassTex);
+        shader.SetTexture(kernel, "TexHPass", TexManager.m_hPassTex);
+    }
+    #endregion
+}
+
+
+#region OLD
+/*
+using System;
+using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Collections;
+using System.Collections.Generic;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.Profiling;
+using UnityEngine.UI;
+using UnityEngine.Rendering;
+
 [ExecuteInEditMode]
 [RequireComponent(typeof(TextureManager))]
 public class MoistureDistribuition : MonoBehaviour
@@ -46,31 +426,33 @@ public class MoistureDistribuition : MonoBehaviour
 
     [Space]
     public ComputeShader meanHeightCompute;
+    public ComputeShader relativeHeightCompute;
     public ComputeShader slopeCompute;
     public ComputeShader waterSpreadCompute;
+    public ComputeShader moistureCompute;
     #endregion
 
     #region PRIVATE VARIABLES
     private const float MAX_SLOPE = 0.5f;
     private const int KERNEL_BUFFER_SIZE = 512;
 
-    private ComputeBuffer heightBuffer;
-    private ComputeBuffer waterBuffer;
-    private ComputeBuffer vPassBuffer;
-    private ComputeBuffer hPassBuffer;
-    private ComputeBuffer kernelBuffer;
+    //private ComputeBuffer heightBuffer;
+    //private ComputeBuffer waterBuffer;
+    //private ComputeBuffer vPassBuffer;
+    //private ComputeBuffer hPassBuffer;
+    //private ComputeBuffer kernelBuffer;
 
-    private ComputeBuffer slopeBuffer;
-    private ComputeBuffer meanHeightBuffer;
-    private ComputeBuffer waterSpreadBuffer;
-
-    private int slopeKernelHandle;
+    //private ComputeBuffer slopeBuffer;
+    //private ComputeBuffer meanHeightBuffer;
+    //private ComputeBuffer waterSpreadBuffer;
 
     private int meanHFirstKernel;
     private int meanHSecondKernel;
-
+    private int relativeHKernel;
+    private int slopeKernel;
     private int wSpreadFirstKernel;
     private int wSpreadSecondKernel;
+    private int moistureKernel;
 
     /// <summary>
     /// Size of a tile in pixels
@@ -80,14 +462,14 @@ public class MoistureDistribuition : MonoBehaviour
     private int vTiles { get { return TexManager.Height / tileSize; } }
     private int totalTiles { get { return hTiles * vTiles; } }
 
-    private float[] heightData = null;
-    private float[] waterData = null;
-    private float[] waterSpreadData = null;
-    private float[] meanHeightData = null;
-    private float[] relativeHeightData = null;
-    private float[] slopeData = null;
-    private float[] moistureData = null;
-    private float[] kernelValues = null;
+    //private float[] heightData = null;
+    //private float[] waterData = null;
+    //private float[] waterSpreadData = null;
+    //private float[] meanHeightData = null;
+    //private float[] relativeHeightData = null;
+    //private float[] slopeData = null;
+    //private float[] moistureData = null;
+    //private float[] kernelValues = null;
 
     private TextureManager m_TexManager;
     private TextureManager TexManager
@@ -106,40 +488,42 @@ public class MoistureDistribuition : MonoBehaviour
     /// </summary>
     public void LoadDataFromFiles()
     {
-        heightData = TexManager.LoadHeightData();
-        waterData = TexManager.LoadWaterData();
+        TexManager.LoadHeightData();
+        TexManager.LoadWaterData();
 
-        TexManager.UpdateHeightmapTexture();
-        TexManager.UpdateWatermapTexture();
+        //TexManager.UpdateHeightmapTexture();
+        //TexManager.UpdateWatermapTexture();
 
-        InitBuffers();
+        InitComputes();
     }
 
-    private void InitBuffers()
+    private void InitComputes()
     {
         TexManager.InitTextures(TexManager.Dimensions, new Vector2(1024, 1024));
 
-        // Kernels
         meanHFirstKernel = meanHeightCompute.FindKernel("FirstPass");
-        meanHSecondKernel = meanHeightCompute.FindKernel("SecondPass");
-
         meanHeightCompute.SetTextureFromGlobal(meanHFirstKernel, "TexHeight", "TexHeight");
         meanHeightCompute.SetTextureFromGlobal(meanHFirstKernel, "TexVPass", "TexVPass");
         meanHeightCompute.SetTextureFromGlobal(meanHFirstKernel, "TexHPass", "TexHPass");
-
+        meanHSecondKernel = meanHeightCompute.FindKernel("SecondPass");
         meanHeightCompute.SetTextureFromGlobal(meanHSecondKernel, "TexVPass", "TexVPass");
         meanHeightCompute.SetTextureFromGlobal(meanHSecondKernel, "TexHPass", "TexHPass");
         meanHeightCompute.SetTextureFromGlobal(meanHSecondKernel, "TexMeanH", "TexMeanH");
 
-        slopeKernelHandle = slopeCompute.FindKernel("CSMain");
+        relativeHKernel = relativeHeightCompute.FindKernel("CSMain");
+        relativeHeightCompute.SetTextureFromGlobal(relativeHKernel, "TexHeight", "TexHeight");
+        relativeHeightCompute.SetTextureFromGlobal(relativeHKernel, "TexMeanH", "TexMeanH");
+        relativeHeightCompute.SetTextureFromGlobal(relativeHKernel, "TexRelativeH", "TexRelativeH");
+
+        slopeKernel = slopeCompute.FindKernel("CSMain");
+        slopeCompute.SetTextureFromGlobal(slopeKernel, "TexHeight", "TexHeight");
+        slopeCompute.SetTextureFromGlobal(slopeKernel, "TexSlope", "TexSlope");
 
         wSpreadFirstKernel = waterSpreadCompute.FindKernel("FirstPass");
-        wSpreadSecondKernel = waterSpreadCompute.FindKernel("SecondPass");
-
         waterSpreadCompute.SetTextureFromGlobal(wSpreadFirstKernel, "TexWater", "TexWater");
         waterSpreadCompute.SetTextureFromGlobal(wSpreadFirstKernel, "TexVPass", "TexVPass");
         waterSpreadCompute.SetTextureFromGlobal(wSpreadFirstKernel, "TexHPass", "TexHPass");
-
+        wSpreadSecondKernel = waterSpreadCompute.FindKernel("SecondPass");
         waterSpreadCompute.SetTextureFromGlobal(wSpreadSecondKernel, "TexWater", "TexWater");
         waterSpreadCompute.SetTextureFromGlobal(wSpreadSecondKernel, "TexVPass", "TexVPass");
         waterSpreadCompute.SetTextureFromGlobal(wSpreadSecondKernel, "TexHPass", "TexHPass");
@@ -153,13 +537,13 @@ public class MoistureDistribuition : MonoBehaviour
     {
         TexManager.ReleaseTextures();
 
-        heightData = null;
-        waterData = null;
-        waterSpreadData = null;
-        meanHeightData = null;
-        relativeHeightData = null;
-        slopeData = null;
-        moistureData = null;
+        //heightData = null;
+        //waterData = null;
+        //waterSpreadData = null;
+        //meanHeightData = null;
+        //relativeHeightData = null;
+        //slopeData = null;
+        //moistureData = null;
     }
 
     /// <summary>
@@ -203,16 +587,26 @@ public class MoistureDistribuition : MonoBehaviour
     /// </summary>
     public void CalculateRelativeHeight()
     {
-        if (TexManager.IsHeightDataLoaded && meanHeightData != null)
+        if (TexManager.IsHeightDataLoaded)
         {
-            Profiler.BeginSample("Relative Height Calculation CPU");
+            //Profiler.BeginSample("Relative Height Calculation CPU");
 
-            for (int i = 0; i < heightData.Length; i++)
-                relativeHeightData[i] = ((heightData[i] - meanHeightData[i]) + 1f) * 0.5f;
+            //for (int i = 0; i < heightData.Length; i++)
+            //    relativeHeightData[i] = ((heightData[i] - meanHeightData[i]) + 1f) * 0.5f;
+
+            //Profiler.EndSample();
+
+            //TexManager.UpdateRelativeHeightTexture(relativeHeightData);
+
+            Profiler.BeginSample("Relative Height Calculation GPU");
+
+            //relativeHeightCompute.SetInts("Pos", new int[] { 0, 0, TexManager.Width, TexManager.Height });
+            //relativeHeightCompute.SetTextureFromGlobal(relativeHKernel, "TexHeight", "TexHeight");
+            //relativeHeightCompute.SetTextureFromGlobal(relativeHKernel, "TexMeanH", "TexMeanH");
+
+            relativeHeightCompute.Dispatch(relativeHKernel, TexManager.Height / 8, TexManager.Width / 8, 1);
 
             Profiler.EndSample();
-
-            TexManager.UpdateRelativeHeightTexture(relativeHeightData);
         }
         else
             Debug.LogError("Relative Height not calculated.");
@@ -225,30 +619,32 @@ public class MoistureDistribuition : MonoBehaviour
     {
         if (TexManager.IsHeightDataLoaded)
         {
-            Profiler.BeginSample("Slope Calculation CPU");
+            //Profiler.BeginSample("Slope Calculation CPU");
 
-            slopeData = new float[heightData.Length];
+            //slopeData = new float[heightData.Length];
 
-            for (int i = 0; i < TexManager.Height; i++)
-            {
-                for (int j = 0; j < TexManager.Width; j++)
-                {
-                    slopeData[To1DIndex(i, j, TexManager.Width)] = CalculatePixelSlope(heightData, i, j);
-                }
-            }
+            //for (int i = 0; i < TexManager.Height; i++)
+            //{
+            //    for (int j = 0; j < TexManager.Width; j++)
+            //    {
+            //        slopeData[To1DIndex(i, j, TexManager.Width)] = CalculatePixelSlope(heightData, i, j);
+            //    }
+            //}
 
-            Profiler.EndSample();
+            //Profiler.EndSample();
 
             Profiler.BeginSample("Slope Calculation GPU");
 
             slopeCompute.SetInt("Distance", slopeDistance);
-            slopeCompute.Dispatch(slopeKernelHandle, TexManager.Height / 8, TexManager.Width / 8, 1);
+            slopeCompute.SetInts("Pos", new int[] { 0, 0, TexManager.Width, TexManager.Height });
+
+            slopeCompute.Dispatch(slopeKernel, TexManager.Height / 8, TexManager.Width / 8, 1);
 
             Profiler.EndSample();
 
-            slopeBuffer.GetData(slopeData);
+            //slopeBuffer.GetData(slopeData);
 
-            TexManager.UpdateSlopeTexture(slopeData);
+            //TexManager.UpdateSlopeTexture(slopeData);
         }
         else
             Debug.LogError("Slope not calculated.");
@@ -295,14 +691,14 @@ public class MoistureDistribuition : MonoBehaviour
     /// </summary>
     private void OnDestroy()
     {
-        heightBuffer.Release();
-        waterBuffer.Release();
-        vPassBuffer.Release();
-        hPassBuffer.Release();
-        meanHeightBuffer.Release();
-        slopeBuffer.Release();
-        waterSpreadBuffer.Release();
-        kernelBuffer.Release();
+        //heightBuffer.Release();
+        //waterBuffer.Release();
+        //vPassBuffer.Release();
+        //hPassBuffer.Release();
+        //meanHeightBuffer.Release();
+        //slopeBuffer.Release();
+        //waterSpreadBuffer.Release();
+        //kernelBuffer.Release();
     }
 
     /// <summary>
@@ -332,6 +728,10 @@ public class MoistureDistribuition : MonoBehaviour
             Profiler.EndSample();
 
             TexManager.UpdateHumidityTexture(moistureData);
+
+            Profiler.BeginSample("Humidity Calculation GPU");
+
+            Profiler.EndSample();
         }
         else
             Debug.LogError("Humidity not calculated.");
@@ -342,7 +742,7 @@ public class MoistureDistribuition : MonoBehaviour
     /// </summary>
     public void UpdateTextures()
     {
-        TexManager.UpdateAllTextures(meanHeightData, relativeHeightData, slopeData, waterSpreadData, moistureData);
+        //TexManager.UpdateAllTextures(meanHeightData, relativeHeightData, slopeData, waterSpreadData, moistureData);
     }
 
     /// <summary>
@@ -350,7 +750,7 @@ public class MoistureDistribuition : MonoBehaviour
     /// </summary>
     public void SaveTextures()
     {
-        TexManager.SaveAllTextures(meanHeightData, relativeHeightData, slopeData, waterSpreadData, moistureData);
+        //TexManager.SaveAllTextures(meanHeightData, relativeHeightData, slopeData, waterSpreadData, moistureData);
     }
 
     /// <summary>
@@ -493,20 +893,20 @@ public class MoistureDistribuition : MonoBehaviour
     /// <summary>
     /// 
     /// </summary>
-    private int[] LocateWater(float[] data)
-    {
-        List<int> indexes = new List<int>(TexManager.Resolution / 4); // pre-allocates 25% of the max size to try to reduce the impact of adding to the list
+    //private int[] LocateWater(float[] data)
+    //{
+    //    List<int> indexes = new List<int>(TexManager.Resolution / 4); // pre-allocates 25% of the max size to try to reduce the impact of adding to the list
 
-        for (int k = 0; k < data.Length; k++)
-        {
-            if (waterData[k] <= waterThreshold)
-            {
-                indexes.Add(k);
-            }
-        }
+    //    for (int k = 0; k < data.Length; k++)
+    //    {
+    //        if (waterData[k] <= waterThreshold)
+    //        {
+    //            indexes.Add(k);
+    //        }
+    //    }
 
-        return indexes.ToArray();
-    }
+    //    return indexes.ToArray();
+    //}
 
     #endregion
 
@@ -543,7 +943,7 @@ public class MoistureDistribuition : MonoBehaviour
     private void OnValidate()
     {
         //Debug.Log("ON VALIDATE");
-        horizontalTiles = NearestPowerOfTwo(horizontalTiles); /* += horizontalTiles % 2;*/
+        horizontalTiles = NearestPowerOfTwo(horizontalTiles); // += horizontalTiles % 2;
 
         CalculateMeanHeight();
     }
@@ -555,3 +955,5 @@ public class MoistureDistribuition : MonoBehaviour
         return 1 << power;
     }
 }
+*/
+#endregion

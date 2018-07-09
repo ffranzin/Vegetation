@@ -98,10 +98,10 @@ public class RasterReader
 
         // statistics
         CPLErr err = band.ComputeStatistics(false, out min, out max, out mean, out stdDev, null, null);
-        //if (err == CPLErr.CE_None)
+        if (err == CPLErr.CE_None) { }
         //    Debug.Log(string.Format("Min={0:N2}, Max={1:N2}, Mean={1:N2}, StdDev={1:N2}", min, max, mean, stdDev));
-        //else
-        //    Debug.Log("Error computing statistics :: " + err.ToString());
+        else
+            Debug.Log("Error computing statistics :: " + err.ToString());
 
         // overviews
         //if (band.GetOverviewCount() > 0)

@@ -5,66 +5,33 @@ using UnityEditor;
 [CustomEditor(typeof(MoistureDistribuition))]
 public class MoistureDistribuitionEditor : Editor
 {
+    private Vector2 testOrigin;
+
     public override void OnInspectorGUI()
     {
-        //EditorGUI.BeginChangeCheck();
+        EditorGUI.BeginChangeCheck();
 
         DrawDefaultInspector();
 
-        //if (EditorGUI.EndChangeCheck())
-        //{
-        //    Debug.Log("CHANGED");
-        //}
+        EditorGUILayout.Space();
+        testOrigin = EditorGUILayout.Vector2Field(new GUIContent("Test Origin"), testOrigin);
 
-        MoistureDistribuition myScript = (MoistureDistribuition)target;
-        if (GUILayout.Button("Print values"))
-        {
-            myScript.PrintHeightMapValues();
-        }
 
-        if (GUILayout.Button("Clean All Data"))
+        if (EditorGUI.EndChangeCheck())
         {
-            myScript.CleanData();
-        }
+            MoistureDistribuition md = (MoistureDistribuition)target;
 
-        if (GUILayout.Button("Load Data"))
-        {
-            myScript.LoadDataFromFiles();
-        }
+            testOrigin.x = Mathf.Max(0f, testOrigin.x);
+            testOrigin.y = Mathf.Max(0f, testOrigin.y);
 
-        if (GUILayout.Button("Calculate Mean Height"))
-        {
-            myScript.CalculateMeanHeight();
-        }
+            if (Application.isPlaying)
+            {
+                //Debug.Log("Updating...");
 
-        if (GUILayout.Button("Calculate Relative Height"))
-        {
-            myScript.CalculateRelativeHeight();
-        }
-
-        if (GUILayout.Button("Calculate Slope"))
-        {
-            myScript.CalculateSlope();
-        }
-
-        if (GUILayout.Button("Calculate Water Spread"))
-        {
-            myScript.CalculateWaterSpread();
-        }
-
-        if (GUILayout.Button("Calculate Moisture"))
-        {
-            myScript.CalculateMoisture();
-        }
-
-        if (GUILayout.Button("Reload Textures"))
-        {
-            myScript.UpdateTextures();
-        }
-
-        if (GUILayout.Button("Save Textures"))
-        {
-            myScript.SaveTextures();
+                md.UpdateParameters();
+                md.UpdateCurves();
+                md.CalculateAll(testOrigin);
+            }
         }
     }
 }

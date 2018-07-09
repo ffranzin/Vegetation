@@ -1,21 +1,19 @@
 ﻿#pragma kernel CSMain
 
-#include "HumidityUtils.cginc"
+#include "MoistureUtils.cginc"
 
-#define MAX_SLOPE 0.5f;
-
-RWStructuredBuffer<float> SlopeData;
+#define MAX_SLOPE 0.5;
 
 [numthreads(GROUP_SIZE, GROUP_SIZE, 1)]
-void CSMain(uint3 dispid : SV_DispatchThreadID)
+void CSMain(uint3 id : SV_DispatchThreadID)
 {
-	int i = To1DIndex(dispid.y, dispid.x, Size.x);
+	float slopeY = (
+		TexHeight[GetIndex(Pos.xy, Params[0].s_atlas, id.xy, float2(0.0, -Params[0].d_slope))] -
+		TexHeight[GetIndex(Pos.xy, Params[0].s_atlas, id.xy, float2(0.0, Params[0].d_slope))]) * 0.5;
 
-	float slopeX = (HeightData[To1DIndex(dispid.y, max(0, int(dispid.x) - Distance), Size.x)]
-		- HeightData[To1DIndex(dispid.y, min(Size.x - 1, dispid.x + Distance), Size.x)]) * 0.5;
+	float slopeX = (
+		TexHeight[GetIndex(Pos.xy, Params[0].s_atlas, id.xy, float2(-Params[0].d_slope, 0.0))] -
+		TexHeight[GetIndex(Pos.xy, Params[0].s_atlas, id.xy, float2(Params[0].d_slope, 0.0))]) * 0.5;
 
-	float slopeY = (HeightData[To1DIndex(max(0, int(dispid.y) - Distance), dispid.x, Size.x)]
-		- HeightData[To1DIndex(min(Size.y - 1, dispid.y + Distance), dispid.x, Size.x)]) * 0.5;
-
-	SlopeData[i] = sqrt((slopeX * slopeX) + (slopeY * slopeY)) / MAX_SLOPE;
+	TexSlope[id.xy] = sqrt((slopeX * slopeX) + (slopeY * slopeY)) / MAX_SLOPE;
 }

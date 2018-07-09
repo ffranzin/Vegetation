@@ -1,7 +1,7 @@
 ﻿#pragma kernel FirstPass
 #pragma kernel SecondPass
 
-#include "HumidityUtils.cginc"
+#include "MoistureUtils.cginc"
 
 [numthreads(GROUP_SIZE, GROUP_SIZE, 1)]
 void FirstPass(uint3 id : SV_DispatchThreadID)
@@ -9,21 +9,21 @@ void FirstPass(uint3 id : SV_DispatchThreadID)
 	TexVPass[id.xy] = 0.0;
 	TexHPass[id.xy] = 0.0;
 
-	float dst = float(Distance + 1);
+	float dst = Params[0].d_waterSpread + 1.0;
 	float accum = 0.0;
 
-	for (int k = 0; k <= (Distance + 1); k++)
+	for (int k = 0; k <= int(Params[0].d_waterSpread + 1.0); k++)
 	{
 		float w = 1.0 - (float(k) / dst);
 		accum += 2.0 * w;
 
 		TexVPass[id.xy] += (
-			TexWater[GetIndex(Pos.xy, Pos.zw, id.xy, int2(0, -k))] +
-			TexWater[GetIndex(Pos.xy, Pos.zw, id.xy, int2(0, k))]) * w;
+			TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, float2(0.0, -k))] +
+			TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, float2(0.0, k))]) * w;
 
 		TexHPass[id.xy] += (
-			TexWater[GetIndex(Pos.xy, Pos.zw, id.xy, int2(-k, 0))] +
-			TexWater[GetIndex(Pos.xy, Pos.zw, id.xy, int2(k, 0))]) * w;
+			TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, float2(-k, 0.0))] +
+			TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, float2(k, 0.0))]) * w;
 	}
 
 	TexVPass[id.xy] /= accum;
@@ -33,26 +33,26 @@ void FirstPass(uint3 id : SV_DispatchThreadID)
 [numthreads(GROUP_SIZE, GROUP_SIZE, 1)]
 void SecondPass(uint3 id : SV_DispatchThreadID)
 {
-	const int2 _zero = int2(0, 0);
-	const int2 _size = int2(SPLAT_SIZE, SPLAT_SIZE);
+	const float2 _zero = float2(0, 0);
 
 	TexWSpread[id.xy] = 0.0;
 
-	float dst = float(Distance + 1);
+	float dst = Params[0].d_waterSpread + 1.0;
 	float accum = 0.0;
 
-	for (int k = 0; k <= (Distance + 1); k++)
+	for (int k = 1; k <= int(Params[0].d_waterSpread + 1.0); k++)
 	{
 		float w = 1.0 - (float(k) / dst);
 		accum += 2.0 * w;
 
 		TexWSpread[id.xy] += (
-			TexVPass[GetIndex(_zero, _size, id.xy, int2(-k, 0))] +
-			TexHPass[GetIndex(_zero, _size, id.xy, int2(0, -k))]) * w;
+			TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(-k, 0.0))] +
+			TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(0.0, -k))]) * w;
 		TexWSpread[id.xy] += (
-			TexVPass[GetIndex(_zero, _size, id.xy, int2(0, k))] +
-			TexHPass[GetIndex(_zero, _size, id.xy, int2(k, 0))]) * w;
+			TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(0.0, k))] +
+			TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(k, 0.0))]) * w;
 	}
 
-	TexWSpread[id.xy] = (TexWSpread[id.xy] / accum) + TexWater[id.xy];
+	TexWSpread[id.xy] /= accum;
+	TexWSpread[id.xy] += TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, _zero)];
 }

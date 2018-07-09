@@ -1,0 +1,24 @@
+﻿#pragma kernel CSMain
+
+#include "MoistureUtils.cginc"
+
+[numthreads(GROUP_SIZE, GROUP_SIZE, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+	const float2 _zero = float2(0, 0);
+
+	uint2 atlasID = GetIndex(Pos, Params[0].s_atlas, id.xy, _zero);
+	uint2 splatID = GetIndex(_zero, Params[0].s_splat, id.xy, _zero);
+
+	float baseMoisture = EvalHeight(TexHeight[atlasID]);
+
+	float relativeMoisture = EvalRelativeHeight(TexRelativeH[splatID]);
+
+	float water = TexWSpread[splatID] * EvalWaterSpreadV(TexRelativeH[splatID]) + TexWater[atlasID];
+
+	TexMoisture[splatID] = clamp(
+		baseMoisture * (1.0 + relativeMoisture - EvalSlope(TexSlope[splatID])) +
+		(relativeMoisture * 0.1), 
+		0.0, 1.0) + 
+		water;
+}
