@@ -108,12 +108,11 @@ public class Atlas
 		ivec2 page = freePages.Pop();
 		page *= m_PageSize;
 
-		//if (page.x != 0)
-		//	page.x = page.x + 1;
-		//if (page.y != 0)
-		//	page.y = page.y + 1;
-
-		return new AtlasPageDescriptor(this, page, m_PageSize);
+        //if (page.x != 0)
+        //	page.x = page.x + 1;
+        //if (page.y != 0)
+        //	page.y = page.y + 1;
+        return new AtlasPageDescriptor(this, page, m_PageSize);
 	}
 
 	public void ReleasePage(AtlasPageDescriptor page)

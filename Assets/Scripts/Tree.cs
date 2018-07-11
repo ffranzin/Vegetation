@@ -5,116 +5,185 @@ using UnityEngine;
 
 public class Tree : MonoBehaviour
 {
-    const float TERRAIN_MIN_HEIGHT = 0;
-    const float TERRAIN_MAX_HEIGHT = 100;
-
     const float WORLD_MIN_TEMPERATURE = -20;
     const float WORLD_MAX_TEMPERATURE = 50;
 
 
-    public float TreeGlobalHeightOccuranceProbability(float worldHeight)
+    private float TreeHeightOccuranceProbability(float worldHeight)
     {
-        worldHeight = Utils.Remap(worldHeight, TERRAIN_MIN_HEIGHT, TERRAIN_MAX_HEIGHT, 0f, 1f);
         return Mathf.Clamp01(globalHeightCurve.Evaluate(worldHeight));
     }
 
-
-    public float TreeMoistureOccuranceProbability(float worldMoisture)
+    private float TreeHumidityOccuranceProbability(float worldMoisture)
     {
-        return Mathf.Clamp01(moistureCurve.Evaluate(worldMoisture));
+        return Mathf.Clamp01(humidityCurve.Evaluate(worldMoisture));
     }
 
-
-    public float TreeInclinationOccuranceProbability(float worldInclination)
+    private float TreeSlopeOccuranceProbability(float worldInclination)
     {
-        return Mathf.Clamp01(inclinationCurve.Evaluate(worldInclination));
+        return Mathf.Clamp01(slopeCurve.Evaluate(worldInclination));
     }
 
-
-    public float TreeTemperatureOccuranceProbability(float worldTemperature)
+    private float TreeTemperatureOccuranceProbability(float worldTemperature)
     {
         worldTemperature = temperatureCurve.Evaluate(worldTemperature);
         return Utils.Remap(worldTemperature, WORLD_MIN_TEMPERATURE, WORLD_MAX_TEMPERATURE, 0, 1);
     }
 
+    private float TreeSensitiveOccuranceProbability(float sensitive)
+    {
+        sensitive = temperatureCurve.Evaluate(sensitive);
+        return Utils.Remap(sensitive, WORLD_MIN_TEMPERATURE, WORLD_MAX_TEMPERATURE, 0, 1);
+    }
+
+    private float TreeNecessityOccuranceProbability(float necessity)
+    {
+        necessity = temperatureCurve.Evaluate(necessity);
+        return Utils.Remap(necessity, WORLD_MIN_TEMPERATURE, WORLD_MAX_TEMPERATURE, 0, 1);
+    }
+
     [HideInInspector]
     public int myIndexInTreePool = 0;
 
-    public float treeMeshHeight;
-    
     public AnimationCurve globalHeightCurve;
-    public AnimationCurve localHeightCurve;
     public AnimationCurve temperatureCurve;
-    public AnimationCurve moistureCurve;
-    public AnimationCurve inclinationCurve;
+    public AnimationCurve humidityCurve;
     public AnimationCurve slopeCurve;
-    public Mesh[] models;
+    public AnimationCurve sensitiveToUpperLevelCurve;
+    public AnimationCurve necessityToUpperLevelCurve;
     
+    public static int N_INFO_DISCRETIZED = 10;
+
+    public float[] TreeHeightDiscretized
+    {
+        get
+        {
+            float[] info = new float[N_INFO_DISCRETIZED];
+
+            for (int i = 0; i < N_INFO_DISCRETIZED; i++)
+                info[i] = TreeHeightOccuranceProbability((float)i / N_INFO_DISCRETIZED);
+
+            return info;
+        }
+    }
+
+    public float[] TreeSlopeDiscretized
+    {
+        get
+        {
+            float[] info = new float[N_INFO_DISCRETIZED];
+
+            for (int i = 0; i < N_INFO_DISCRETIZED; i++)
+                info[i] = TreeSlopeOccuranceProbability((float)i / N_INFO_DISCRETIZED);
+
+            return info;
+        }
+    }
+
+    public float[] TreeSensitiveDiscretized
+    {
+        get
+        {
+            float[] info = new float[N_INFO_DISCRETIZED];
+
+            for (int i = 0; i < N_INFO_DISCRETIZED; i++)
+                info[i] = TreeSensitiveOccuranceProbability((float)i / N_INFO_DISCRETIZED);
+
+            return info;
+        }
+    }
+
+    public float[] TreeNecessityDiscretized
+    {
+        get
+        {
+            float[] info = new float[N_INFO_DISCRETIZED];
+
+            for (int i = 0; i < N_INFO_DISCRETIZED; i++)
+                info[i] = TreeNecessityOccuranceProbability((float)i / N_INFO_DISCRETIZED);
+
+            return info;
+        }
+    }
+
+    public float[] TreeHumidityDiscretized
+    {
+        get
+        {
+            float[] info = new float[N_INFO_DISCRETIZED];
+
+            for (int i = 0; i < N_INFO_DISCRETIZED; i++)
+                info[i] = TreeHumidityOccuranceProbability((float)i / N_INFO_DISCRETIZED);
+
+            return info;
+        }
+    }
+
+
 
     ////////////////////
+    public Mesh[] models;
 
-        
     private ComputeBuffer argsBuffer;
-    
 
-    public List<Vector3> positions = new List<Vector3>();
     private Material m_material;
     public Material material;
-    
+
     public Color temp_color;
 
-    bool areUptodate = false;
-    
     uint[] args = new uint[5] { 0, 0, 0, 0, 0 };
-    
+
     int positionsGenerated = 0;
+
+    Mesh drawMesh;
 
 
     public void Start()
     {
-        if (treeMeshHeight == 0)    Debug.LogError("Some prefabs have the height zero.");
+        drawMesh = models[1];
 
-        argsBuffer = new ComputeBuffer(5, sizeof(uint), ComputeBufferType.IndirectArguments);
         m_material = new Material(material);
+
         if (m_material == null) Debug.LogError("Some Material arent generated.");
-    }
-    
 
-    public void LateUpdate()
-    {
-        positionsGenerated = SplatManager.positionsPerTreeIndexData[myIndexInTreePool];
+        m_material.SetInt("_myPositionArrayIndex", myIndexInTreePool * GlobalManager.treeBufferSize);
 
-        if (positionsGenerated == 0) return;
-
-        UpdateBuffers();
-        
-        Graphics.DrawMeshInstancedIndirect(models[0], 0, m_material, new Bounds(Vector3.zero, Vector3.one * 100000), argsBuffer);
-    }
-
-
-    public void UpdateBuffers(Mesh mesh, int level)
-    {
-        areUptodate = false;
-        
         m_material.SetColor("_Color", temp_color);
 
-        m_material.SetBuffer("_positionsPerTreeIndexBuffer", SplatManager.positionsPerTreeBuffer);
+        m_material.SetTexture("_HeightMap", TerrainManager.m_heightMap);
 
-        m_material.SetInt("_myPositionArrayIndex", myIndexInTreePool * 1000);
-        
-        args[0] = (uint)mesh.GetIndexCount(mesh.subMeshCount - 1);
+        argsBuffer = new ComputeBuffer(5, sizeof(uint), ComputeBufferType.IndirectArguments);
+        args[0] = (uint)drawMesh.GetIndexCount(drawMesh.subMeshCount - 1);
         args[1] = (uint)positionsGenerated;
-        args[2] = (uint)mesh.GetIndexStart(0);
-        args[3] = (uint)mesh.GetBaseVertex(0);
-
-        argsBuffer.SetData(args);
-        areUptodate = true;
+        args[2] = (uint)drawMesh.GetIndexStart(0);
+        args[3] = (uint)drawMesh.GetBaseVertex(0);
     }
-    
+
+
+    public void Update()
+    {
+        if (positionsGenerated == 0) return;
+        Graphics.DrawMeshInstancedIndirect(drawMesh, 0, m_material, new Bounds(Vector3.zero, Vector3.one * 100000), argsBuffer);
+    }
+
 
     public void UpdateBuffers()
     {
-        UpdateBuffers(models[0], 1);
+        positionsGenerated = GlobalManager.positionsPerTreeAmountData[myIndexInTreePool];
+        
+        m_material.SetColor("_Color", temp_color);
+
+        m_material.SetBuffer("_positionsPerTreeIndexBuffer", GlobalManager.positionsPerTreeBuffer);
+
+        args[1] = (uint)positionsGenerated;
+
+        argsBuffer.SetData(args);
+        
+        //Debug.Log(myIndexInTreePool + "  " + positionsGenerated);
     }
+
+
+
+
 
 }

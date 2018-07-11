@@ -2,19 +2,27 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class TreePool : MonoBehaviour {
+public class TreePool : MonoBehaviour
+{
 
     public GameObject[] _treePool;
     public static List<Tree> treePool;
-    
 
-    private void Start()
+    public static int size
     {
-        int id = 0;
+        get
+        {
+            return treePool == null ? 0 : treePool.Count;
+        }
+    }
 
+
+
+    private void Awake()
+    {
         treePool = new List<Tree>();
-        
-        for(int i = 0; i < _treePool.Length; i++)
+
+        for (int i = 0; i < _treePool.Length; i++)
         {
             GameObject go = Instantiate(_treePool[i]);
 
@@ -23,8 +31,9 @@ public class TreePool : MonoBehaviour {
             if (t == null) Debug.LogError("Missing Component.");
 
             t.myIndexInTreePool = i;
-            
+
             treePool.Add(t);
         }
     }
+    
 }

@@ -76,8 +76,6 @@ public class FlyCamera : MonoBehaviour
 		}
 
 		mainSpeed += Input.GetAxis("Mouse ScrollWheel") * mainSpeed * 2f;
-		mainSpeed += (Input.GetKey(KeyCode.Q) ? 0.01f : 0)  * mainSpeed * 2f;
-		mainSpeed += (Input.GetKey(KeyCode.E) ? -0.01f : 0)  * mainSpeed * 2f;
 
 		if (mainSpeed < minSpeed)
 			mainSpeed = minSpeed;

@@ -1,0 +1,87 @@
+﻿
+#pragma kernel ComputeSplat
+#pragma kernel TransferDF
+#pragma kernel Clear
+#include "Utils.cginc"
+
+
+RWTexture2D <float4> _texture;
+RWStructuredBuffer<float2> _positionsBuffer;
+RWStructuredBuffer<QuadTreeInfo> _qti;
+
+
+ float2 tmpPositionColor(float2 id)
+{
+	float a = id.x / _qti[0].currentNodeAtlasSize;
+	float b = id.y / _qti[0].currentNodeAtlasSize;
+	
+	a = a < 0.5 ? 0 : 1;
+	b = b < 0.5 ? 0 : 1;
+
+	return float2(a, b);
+}
+
+
+
+void FillTexture(float2 atlasCenter, float radius)
+{
+	int n = radius + 1; // +1 to avoid floor rounding
+
+	for(int i = -n; i<n; i++)
+	{
+		for(int j = -n; j<n; j++)
+		{
+			float2 id = atlasCenter + float2(i, j);
+
+			float dist = length(id - atlasCenter);
+
+			dist = 1 - Remap(dist, 0, radius, 0.0, 1.0);
+
+			_texture[id.xy] += float4(dist, 0, 0, 1);
+		}
+	}
+}
+
+
+
+
+[numthreads(16,1,1)]
+void ComputeSplat (uint3 id : SV_DispatchThreadID)
+{
+	int NUM_THREAD = 16;
+
+	int init = id.x * (BLOCK_SIZE / NUM_THREAD);
+	int size = init + (BLOCK_SIZE / NUM_THREAD);
+
+	QuadTreeInfo qti = _qti[0];
+
+	float res = qti.currentNodeWorldSize / qti.currentNodeAtlasSize;
+	float radius = qti.treeRadius / res;
+
+	for(int i = init; i < size; i++)
+	{
+		if(_positionsBuffer[i].x == INFINITY) continue;
+
+		float2 p = WorldPosition2AtlasCoord(qti, _positionsBuffer[i]);
+
+		FillTexture(p, radius);
+	}
+}
+
+
+
+
+[numthreads(16,16,1)]
+void TransferDF (uint3 id : SV_DispatchThreadID)
+{
+	float2 uv = CurrentAtlasPos2UpperLevelAtlasUV(_qti[0], id.xy).xy;
+	_texture[id.xy + _qti[0].currentNodeAtlasOrigin.xy] += _texture[uv];
+}
+
+
+
+[numthreads(16,16,1)]
+void Clear (uint3 id : SV_DispatchThreadID)
+{
+	_texture[id.xy + _qti[0].currentNodeAtlasOrigin] = float4(0,0,0,0);
+}

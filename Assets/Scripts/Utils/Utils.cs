@@ -44,14 +44,11 @@ public class Utils : MonoBehaviour {
         Debug.DrawLine(new Vector3(b.max.x, h, b.min.z), new Vector3(b.max.x, h, b.max.z), c, duration); // vertical right
     }
 
-
-
-    public static float Remap(float x, float in_min, float in_max, float out_min, float out_max)
+    
+    public static float Remap(float org_val, float org_min, float org_max, float new_min, float new_max)
     {
-        return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+        return new_min + Mathf.Clamp01(((org_val - org_min) / (org_max - org_min)) * (new_max - new_min));
     }
-
-
 
     public static float DistancePointToLine(Vector3 l0, Vector3 l1, Vector3 p)
     {

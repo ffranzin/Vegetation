@@ -52,16 +52,45 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   myIndexInTreePool: 0
-  treeMeshHeight: 8
   globalHeightCurve:
     serializedVersion: 2
-    m_Curve: []
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  localHeightCurve:
-    serializedVersion: 2
-    m_Curve: []
+    m_Curve:
+    - serializedVersion: 3
+      time: -0.34782028
+      value: -0.045036316
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 0.02301104
+      value: 0.0033340454
+      inSlope: Infinity
+      outSlope: Infinity
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0
+    - serializedVersion: 3
+      time: 0.24676664
+      value: 1.0615389
+      inSlope: Infinity
+      outSlope: Infinity
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0.3020401
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
@@ -71,13 +100,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  moistureCurve:
-    serializedVersion: 2
-    m_Curve: []
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  inclinationCurve:
+  humidityCurve:
     serializedVersion: 2
     m_Curve: []
     m_PreInfinity: 2
@@ -89,9 +112,20 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  sensitiveToUpperLevelCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  necessityToUpperLevelCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   models:
   - {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
-  positions: []
+  - {fileID: 4300000, guid: 9da7da74353934d45a87d23591c51c1f, type: 3}
   material: {fileID: 2100000, guid: 769715462353401448e4d166385d7562, type: 2}
   temp_color: {r: 1, g: 0, b: 0.04843235, a: 0}
-  tmp_id: 0

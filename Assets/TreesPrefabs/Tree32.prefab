@@ -52,16 +52,27 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   myIndexInTreePool: 0
-  treeMeshHeight: 1.2
   globalHeightCurve:
     serializedVersion: 2
-    m_Curve: []
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  localHeightCurve:
-    serializedVersion: 2
-    m_Curve: []
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
@@ -71,13 +82,7 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  moistureCurve:
-    serializedVersion: 2
-    m_Curve: []
-    m_PreInfinity: 2
-    m_PostInfinity: 2
-    m_RotationOrder: 4
-  inclinationCurve:
+  humidityCurve:
     serializedVersion: 2
     m_Curve: []
     m_PreInfinity: 2
@@ -89,9 +94,20 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  sensitiveToUpperLevelCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  necessityToUpperLevelCurve:
+    serializedVersion: 2
+    m_Curve: []
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
   models:
   - {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
-  positions: []
+  - {fileID: 4300000, guid: 9e21394f98749ea44bcb9265994a61bd, type: 3}
   material: {fileID: 2100000, guid: 769715462353401448e4d166385d7562, type: 2}
   temp_color: {r: 0, g: 0.011662006, b: 1, a: 0}
-  tmp_id: 0

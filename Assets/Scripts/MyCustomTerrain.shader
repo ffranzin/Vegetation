@@ -97,16 +97,6 @@ Shader "Custom/MyCustomTerrain" {
 		}
 
 
-		bool IsInsideRoad(float2 pos)
-		{
-			for (int i = 0; i < ROAD_SEGMENTS_COUNT; i++)
-				if (DistanceLinePoint(ROAD_SEGMENTS[i].xy, ROAD_SEGMENTS[i].zw, pos) < ROAD_WIDTH)
-					return true;
-			return false;
-		}
-
-		
-
 
 		void vert(inout appdata_full v)
 		{
@@ -121,6 +111,7 @@ Shader "Custom/MyCustomTerrain" {
 			//uv.x = 1 - uv.x;
 
 			v.vertex.z += tex2Dlod(_HeightMap, float4(uv, 0, 0)).r * TERRAIN_HEIGHT_MULTIPLIER;
+			
 		}
 
 
@@ -130,9 +121,8 @@ Shader "Custom/MyCustomTerrain" {
 			float4 c; 
 			float4 n;
 
-			c = tex2D(_GroundTex, IN.uv_MainTex * 15);
-			c.r =  tex2D(_HeightMap, IN.uv_MainTex);
-
+			c = tex2D(_HeightMap, IN.uv_MainTex);
+			c = tex2D(_GroundTex, IN.uv_MainTex * 50);
 			/*
 			if (IsInsideRoad(IN.worldPos.xz))
 			{
