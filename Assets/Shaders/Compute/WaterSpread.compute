@@ -12,7 +12,7 @@ void FirstPass(uint3 id : SV_DispatchThreadID)
 	float dst = Params[0].d_waterSpread + 1.0;
 	float accum = 0.0;
 
-	for (int k = 0; k <= int(Params[0].d_waterSpread + 1.0); k++)
+	for (int k = 0; k <= int(Params[0].d_waterSpread); k++)
 	{
 		float w = 1.0 - (float(k) / dst);
 		accum += 2.0 * w;
@@ -40,7 +40,7 @@ void SecondPass(uint3 id : SV_DispatchThreadID)
 	float dst = Params[0].d_waterSpread + 1.0;
 	float accum = 0.0;
 
-	for (int k = 1; k <= int(Params[0].d_waterSpread + 1.0); k++)
+	for (int k = 0; k <= int(Params[0].d_waterSpread); k++)
 	{
 		float w = 1.0 - (float(k) / dst);
 		accum += 2.0 * w;
@@ -49,8 +49,8 @@ void SecondPass(uint3 id : SV_DispatchThreadID)
 			TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(-k, 0.0))] +
 			TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(0.0, -k))]) * w;
 		TexWSpread[id.xy] += (
-			TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(0.0, k))] +
-			TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(k, 0.0))]) * w;
+			TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(k, 0.0))] +
+			TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(0.0, k))]) * w;
 	}
 
 	TexWSpread[id.xy] /= accum;

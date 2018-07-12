@@ -151,9 +151,19 @@ public class MoistureDistribuition : MonoBehaviour
     #endregion
 
     #region PUBLIC METHODS
+    private void Start()
+    {
+        LoadDataFromFiles();
+        parameters.s_Atlas = TexManager.Dimensions;
+        TexManager.InitTextures(parameters.s_Atlas, parameters.s_Splat);
+        InitComputes(parameters.s_Atlas, parameters.s_Splat);
+
+        CalculateAll(Vector2.zero);
+    }
+
     private void Update()
     {
-        if(Input.GetKeyUp(KeyCode.Space))
+        if (Input.GetKeyUp(KeyCode.Space))
         {
             Debug.Log("Update");
             UpdateParameters();
@@ -161,15 +171,6 @@ public class MoistureDistribuition : MonoBehaviour
 
             CalculateAll(Vector2.zero);
         }
-    }
-
-    private void Start()
-    {
-        LoadDataFromFiles();
-
-        parameters.s_Atlas = TexManager.Dimensions;
-
-        InitComputes(parameters.s_Atlas, parameters.s_Splat);
     }
 
     public void CalculateAll(Vector2 position)
@@ -199,8 +200,6 @@ public class MoistureDistribuition : MonoBehaviour
 
     private void InitComputes(Vector2 mainTexturesSize, Vector2 mapsTexturesSize)
     {
-        TexManager.InitTextures(mainTexturesSize, mapsTexturesSize);
-        
         meanHFirstKernel = meanHeightCompute.FindKernel("FirstPass");
         meanHSecondKernel = meanHeightCompute.FindKernel("SecondPass");
         relativeHKernel = relativeHeightCompute.FindKernel("CSMain");
@@ -222,8 +221,11 @@ public class MoistureDistribuition : MonoBehaviour
     public void CleanData()
     {
         curves.ReleaseBuffers();
-        if (paramsBuffer != null) paramsBuffer.Release();
-        paramsBuffer = null;
+        if (paramsBuffer != null)
+        {
+            paramsBuffer.Release();
+            paramsBuffer = null;
+        }
         TexManager.ReleaseTextures();
     }
 

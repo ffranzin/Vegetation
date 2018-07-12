@@ -12,13 +12,11 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 
 	float baseMoisture = EvalHeight(TexHeight[atlasID]);
 
-	float relativeMoisture = EvalRelativeHeight(TexRelativeH[splatID]);
+	float relativeMoisture = 1.0 + EvalRelativeHeight(TexRelativeH[splatID]) - EvalSlope(TexSlope[splatID]);
 
 	float water = TexWSpread[splatID] * EvalWaterSpreadV(TexRelativeH[splatID]) + TexWater[atlasID];
 
-	TexMoisture[splatID] = clamp(
-		baseMoisture * (1.0 + relativeMoisture - EvalSlope(TexSlope[splatID])) +
-		(relativeMoisture * 0.1), 
-		0.0, 1.0) + 
+	TexMoisture[splatID] =
+		saturate((baseMoisture + water) * relativeMoisture + (EvalRelativeHeight(TexRelativeH[splatID]) * 0.1)) +
 		water;
 }

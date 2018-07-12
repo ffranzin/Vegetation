@@ -20,8 +20,8 @@ public class TextureManager : MonoBehaviour
         }
     }
 
-    public string HeighmapPath;// = MapsPath + "heightmap_Rfloat.tif";
-    public string WatermapPath;// = MapsPath + "watertmap_Rfloat.tif";
+    public string heighmapPath; // = MapsPath + "heightmap_Rfloat.tif";
+    public string watermapPath; // = MapsPath + "watermap_Rfloat.tif";
     [Space]
     public RenderTextureFormat texFormat = RenderTextureFormat.RFloat;
     public FilterMode filterMode = FilterMode.Bilinear;
@@ -34,7 +34,7 @@ public class TextureManager : MonoBehaviour
     public RawImage waterSpreadRawImg;
     public RawImage moistureRawImg;
 
-    public string MapsPath { get { return Application.dataPath + "/Resources/Maps/"; } }
+    public string MapsPath { get { return /*Application.dataPath +*/ "Assets/Resources/Maps/"; } }
 
     public int Width { get { return m_heightmapInfo.rasterSizeX; } }
     public int Height { get { return m_heightmapInfo.rasterSizeY; } }
@@ -62,14 +62,16 @@ public class TextureManager : MonoBehaviour
 
     private RasterReader.RasterInfo m_heightmapInfo;
     private RasterReader.RasterInfo m_watermapInfo;
-    
+
     /// <summary>
     /// 
     /// </summary>
     /// <returns></returns>
     public float[] LoadHeightData()
     {
-        HeightData = RasterReader.ReadTIFF(HeighmapPath, out m_heightmapInfo);
+        heighmapPath = string.IsNullOrEmpty(heighmapPath) ? (MapsPath + "heightmap_Rfloat.tif") : heighmapPath;
+
+        HeightData = RasterReader.ReadTIFF(heighmapPath, out m_heightmapInfo);
 
         if (HeightData != null)
             Debug.Log("Height Data loaded.\n" + m_heightmapInfo.ToString());
@@ -85,7 +87,9 @@ public class TextureManager : MonoBehaviour
     /// <returns></returns>
     public float[] LoadWaterData()
     {
-        WaterData = RasterReader.ReadTIFF(WatermapPath, out m_watermapInfo);
+        watermapPath = string.IsNullOrEmpty(watermapPath) ? (MapsPath + "watermap_Rfloat.tif") : watermapPath;
+
+        WaterData = RasterReader.ReadTIFF(watermapPath, out m_watermapInfo);
 
         if (WaterData != null)
             Debug.Log("Water Data loaded.\n" + m_watermapInfo.ToString());
@@ -100,11 +104,11 @@ public class TextureManager : MonoBehaviour
     /// </summary>
     public void ReleaseTextures()
     {
-        HeightData = null;
-        WaterData = null;
+        //HeightData = null;
+        //WaterData = null;
 
-        m_heightmapInfo = default(RasterReader.RasterInfo);
-        m_watermapInfo = default(RasterReader.RasterInfo);
+        //m_heightmapInfo = default(RasterReader.RasterInfo);
+        //m_watermapInfo = default(RasterReader.RasterInfo);
 
         if (heightmapRawImg != null) heightmapRawImg.texture = null;
         if (meanHeightRawImg != null) meanHeightRawImg.texture = null;
@@ -139,6 +143,8 @@ public class TextureManager : MonoBehaviour
 
     public void InitTextures(Vector2 mainMapsSize, Vector2 auxMapsSize)
     {
+        //ReleaseTextures();
+
         RenderTextureDescriptor mainDescriptor = new RenderTextureDescriptor()
         {
             width = (int)mainMapsSize.x,
@@ -215,13 +221,13 @@ public class TextureManager : MonoBehaviour
         else
             Debug.LogError("Water data not loaded to the GPU.");
 
-        heightmapRawImg.texture = m_heightMapTex;
-        meanHeightRawImg.texture = m_meanHeightTex;
-        relativeHeightRawImg.texture = m_relativeHeightTex;
-        slopeRawImg.texture = m_slopeTex;
-        watermapRawImg.texture = m_waterMapTex;
-        waterSpreadRawImg.texture = m_waterSpreadTex;
-        moistureRawImg.texture = m_moistureTex;
+        if (heightmapRawImg != null) heightmapRawImg.texture = m_heightMapTex;
+        if (meanHeightRawImg != null) meanHeightRawImg.texture = m_meanHeightTex;
+        if (relativeHeightRawImg != null) relativeHeightRawImg.texture = m_relativeHeightTex;
+        if (slopeRawImg != null) slopeRawImg.texture = m_slopeTex;
+        if (watermapRawImg != null) watermapRawImg.texture = m_waterMapTex;
+        if (waterSpreadRawImg != null) waterSpreadRawImg.texture = m_waterSpreadTex;
+        if (moistureRawImg != null) moistureRawImg.texture = m_moistureTex;
 
         Debug.Log("RenderTextures initialized.");
     }

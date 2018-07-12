@@ -64,9 +64,9 @@ RWTexture2D<float> TexHPass;
 //
 inline uint2 GetIndex(float2 origin, float2 size, float2 index, float2 offset)
 {
-#if !UNITY_UV_STARTS_AT_TOP
-	offset.y = -offset.y;
-#endif
+//#if !UNITY_UV_STARTS_AT_TOP
+//	offset.y = -offset.y;
+//#endif
 
 	const int2 min = int2(0, 0);
 	const int2 one = int2(1, 1);
