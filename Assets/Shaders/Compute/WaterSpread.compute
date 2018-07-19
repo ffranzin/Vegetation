@@ -18,12 +18,12 @@ void FirstPass(uint3 id : SV_DispatchThreadID)
 		accum += 2.0 * w;
 
 		TexVPass[id.xy] += (
-			TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, float2(0.0, -k))] +
-			TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, float2(0.0, k))]) * w;
+			TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(0.0, -k))] +
+			TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(0.0, k))]) * w;
 
 		TexHPass[id.xy] += (
-			TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, float2(-k, 0.0))] +
-			TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, float2(k, 0.0))]) * w;
+			TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(-k, 0.0))] +
+			TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(k, 0.0))]) * w;
 	}
 
 	TexVPass[id.xy] /= accum;
@@ -33,7 +33,7 @@ void FirstPass(uint3 id : SV_DispatchThreadID)
 [numthreads(GROUP_SIZE, GROUP_SIZE, 1)]
 void SecondPass(uint3 id : SV_DispatchThreadID)
 {
-	const float2 _zero = float2(0, 0);
+	const int2 _zero = int2(0, 0);
 
 	TexWSpread[id.xy] = 0.0;
 
@@ -46,11 +46,11 @@ void SecondPass(uint3 id : SV_DispatchThreadID)
 		accum += 2.0 * w;
 
 		TexWSpread[id.xy] += (
-			TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(-k, 0.0))] +
-			TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(0.0, -k))]) * w;
+			TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(-k, 0.0))] +
+			TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(0.0, -k))]) * w;
 		TexWSpread[id.xy] += (
-			TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(k, 0.0))] +
-			TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(0.0, k))]) * w;
+			TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(k, 0.0))] +
+			TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(0.0, k))]) * w;
 	}
 
 	TexWSpread[id.xy] /= accum;

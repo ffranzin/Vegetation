@@ -8,12 +8,12 @@
 void CSMain(uint3 id : SV_DispatchThreadID)
 {
 	float slopeY = (
-		TexHeight[GetIndex(Pos.xy, Params[0].s_atlas, id.xy, float2(0.0, -Params[0].d_slope))] -
-		TexHeight[GetIndex(Pos.xy, Params[0].s_atlas, id.xy, float2(0.0, Params[0].d_slope))]) * 0.5;
+		TexHeight[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(0.0, -Params[0].d_slope))] -
+		TexHeight[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(0.0, Params[0].d_slope))]) * 0.5;
 
 	float slopeX = (
-		TexHeight[GetIndex(Pos.xy, Params[0].s_atlas, id.xy, float2(-Params[0].d_slope, 0.0))] -
-		TexHeight[GetIndex(Pos.xy, Params[0].s_atlas, id.xy, float2(Params[0].d_slope, 0.0))]) * 0.5;
+		TexHeight[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(-Params[0].d_slope, 0.0))] -
+		TexHeight[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(Params[0].d_slope, 0.0))]) * 0.5;
 
 	TexSlope[id.xy] = sqrt((slopeX * slopeX) + (slopeY * slopeY)) / MAX_SLOPE;
 }

@@ -34,8 +34,8 @@ public class MoistureDistribuition : MonoBehaviour
         [Range(0, 10)] public float w_WaterSpread;
 
         [Header("Sizes of the textures")]
-        public Vector2 s_Atlas;
-        public Vector2 s_Splat; // factor of 8
+        public Vector2Int s_Atlas;
+        public Vector2Int s_Splat; // factor of 8
     }
 
     [System.Serializable]
@@ -140,7 +140,7 @@ public class MoistureDistribuition : MonoBehaviour
     private ComputeBuffer paramsBuffer;
 
     private TextureManager m_TexManager;
-    private TextureManager TexManager
+    public TextureManager TexManager
     {
         get {
             if (m_TexManager == null)
@@ -154,11 +154,11 @@ public class MoistureDistribuition : MonoBehaviour
     private void Start()
     {
         LoadDataFromFiles();
-        parameters.s_Atlas = TexManager.Dimensions;
+        parameters.s_Atlas = TexManager.AtlasDimensions;
         TexManager.InitTextures(parameters.s_Atlas, parameters.s_Splat);
         InitComputes(parameters.s_Atlas, parameters.s_Splat);
 
-        CalculateAll(Vector2.zero);
+        CalculateAll(Vector2Int.zero);
     }
 
     private void Update()
@@ -169,11 +169,11 @@ public class MoistureDistribuition : MonoBehaviour
             UpdateParameters();
             UpdateCurves();
 
-            CalculateAll(Vector2.zero);
+            CalculateAll(Vector2Int.zero);
         }
     }
 
-    public void CalculateAll(Vector2 position)
+    public void CalculateAll(Vector2Int position)
     {
         // Calculate All
         Profiler.BeginSample("Calculate All GPU");
@@ -298,7 +298,11 @@ public class MoistureDistribuition : MonoBehaviour
 
     public void UpdateParameters()
     {
-        if (paramsBuffer == null) paramsBuffer = new ComputeBuffer(1, 11 * sizeof(float), ComputeBufferType.Default);
+        if (paramsBuffer == null) paramsBuffer = new ComputeBuffer(
+            1,
+            7 * sizeof(float) + 4 * sizeof(int),
+            ComputeBufferType.Default);
+
         paramsBuffer.SetData(new ComputeParameters[1] { parameters });
 
         SetShaderParameters(meanHeightCompute, meanHFirstKernel);
@@ -337,15 +341,15 @@ public class MoistureDistribuition : MonoBehaviour
         SetShaderTextures(moistureCompute, moistureKernel);
     }
 
-    private void UpdatePosition(Vector2 position)
+    private void UpdatePosition(Vector2Int position)
     {
-        float[] pos = new float[] { position.x, position.y };
+        int[] pos = new int[] { position.x, position.y };
 
-        meanHeightCompute.SetFloats("Pos", pos);
-        relativeHeightCompute.SetFloats("Pos", pos);
-        slopeCompute.SetFloats("Pos", pos);
-        waterSpreadCompute.SetFloats("Pos", pos);
-        moistureCompute.SetFloats("Pos", pos);
+        meanHeightCompute.SetInts("Pos", pos);
+        relativeHeightCompute.SetInts("Pos", pos);
+        slopeCompute.SetInts("Pos", pos);
+        waterSpreadCompute.SetInts("Pos", pos);
+        moistureCompute.SetInts("Pos", pos);
     }
 
     private void SetShaderParameters(ComputeShader shader, int kernel)

@@ -12,12 +12,12 @@ void FirstPass(uint3 id : SV_DispatchThreadID)
 	for (int k = 0; k <= int(Params[0].d_meanHeight); k++)
 	{
 		TexVPass[id.xy] += (
-			TexHeight[GetIndex(Pos.xy, Params[0].s_atlas, id.xy, float2(0.0, -k))] +
-			TexHeight[GetIndex(Pos.xy, Params[0].s_atlas, id.xy, float2(0.0, k))]);
+			TexHeight[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(0.0, -k))] +
+			TexHeight[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(0.0, k))]);
 
 		TexHPass[id.xy] += (
-			TexHeight[GetIndex(Pos.xy, Params[0].s_atlas, id.xy, float2(-k, 0.0))] +
-			TexHeight[GetIndex(Pos.xy, Params[0].s_atlas, id.xy, float2(k, 0.0))]);
+			TexHeight[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(-k, 0.0))] +
+			TexHeight[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(k, 0.0))]);
 	}
 
 	TexVPass[id.xy] /= (Params[0].d_meanHeight * 2.0);
@@ -27,19 +27,19 @@ void FirstPass(uint3 id : SV_DispatchThreadID)
 [numthreads(GROUP_SIZE, GROUP_SIZE, 1)]
 void SecondPass(uint3 id : SV_DispatchThreadID)
 {
-	const float2 _zero = float2(0, 0);
+	const int2 _zero = int2(0, 0);
 
 	TexMeanH[id.xy] = 0.0;
 
 	for (int k = 0; k <= int(Params[0].d_meanHeight); k++)
 	{
 		TexMeanH[id.xy] += (
-			TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(-k, 0.0))] +
-			TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(0.0, -k))]
+			TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(-k, 0.0))] +
+			TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(0.0, -k))]
 			);
 		TexMeanH[id.xy] += (
-			TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(k, 0.0))] +
-			TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(0.0, k))]
+			TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(k, 0.0))] +
+			TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(0.0, k))]
 			);
 	}
 

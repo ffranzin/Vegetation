@@ -12,13 +12,13 @@ void FirstPass(uint3 id : SV_DispatchThreadID)
 	for (int k = 0; k <= int(Params[0].d_waterSpread); k++)
 	{
 		dstV = min(
-			min(k + dstV * (1.0 - TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, float2(0.0, -k))]), dstV),
-			min(k + dstV * (1.0 - TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, float2(0.0, k))]), dstV)
+			min(k + dstV * (1.0 - TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(0.0, -k))]), dstV),
+			min(k + dstV * (1.0 - TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(0.0, k))]), dstV)
 		);
 
 		dstH = min(
-			min(k + dstH * (1.0 - TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, float2(-k, 0.0))]), dstH),
-			min(k + dstH * (1.0 - TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, float2(k, 0.0))]), dstH)
+			min(k + dstH * (1.0 - TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(-k, 0.0))]), dstH),
+			min(k + dstH * (1.0 - TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(k, 0.0))]), dstH)
 		);
 	}
 
@@ -29,7 +29,7 @@ void FirstPass(uint3 id : SV_DispatchThreadID)
 [numthreads(GROUP_SIZE, GROUP_SIZE, 1)]
 void SecondPass(uint3 id : SV_DispatchThreadID)
 {
-	const float2 _zero = float2(0, 0);
+	const int2 _zero = int2(0, 0);
 
 	float dst = 1.0;
 
@@ -38,23 +38,23 @@ void SecondPass(uint3 id : SV_DispatchThreadID)
 		//float d = k / dst;
 
 		//float dst1 = min(
-		//	length(float2(d, TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(-k, 0.0))])),
-		//	length(float2(d, TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(0.0, -k))]))
+		//	length(float2(d, TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(-k, 0.0))])),
+		//	length(float2(d, TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(0.0, -k))]))
 		//);
 
 		//float dst2 = min(
-		//	length(float2(d, TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(-k, 0.0))])),
-		//	length(float2(d, TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(0.0, k))]))
+		//	length(float2(d, TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(-k, 0.0))])),
+		//	length(float2(d, TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(0.0, k))]))
 		//);
 
 		//float dst3 = min(
-		//	length(float2(d, TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(k, 0.0))])),
-		//	length(float2(d, TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(0.0, k))]))
+		//	length(float2(d, TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(k, 0.0))])),
+		//	length(float2(d, TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(0.0, k))]))
 		//);
 
 		//float dst4 = min(
-		//	length(float2(d, TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(k, 0.0))])),
-		//	length(float2(d, TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, float2(0.0, -k))]))
+		//	length(float2(d, TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(k, 0.0))])),
+		//	length(float2(d, TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(0.0, -k))]))
 		//);
 
 		////dst = min(dst, min(dst1, min(dst2, min(dst3, dst4))));

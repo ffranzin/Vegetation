@@ -400,13 +400,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   parameters:
-    d_MeanHeight: 256
+    d_MeanHeight: 32
     d_Slope: 12
     d_WaterSpread: 64
     w_Height: 1
-    w_RelativeHeight: 0.5
-    w_Slope: 1
-    w_WaterSpread: 1
+    w_RelativeHeight: 0.8
+    w_Slope: 2
+    w_WaterSpread: 1.5
     s_Atlas: {x: 0, y: 0}
     s_Splat: {x: 1024, y: 1024}
   curves:
@@ -748,7 +748,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 0.00012207031, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 480, y: 480}
   m_Pivot: {x: 0, y: 1}
 --- !u!114 &677729331

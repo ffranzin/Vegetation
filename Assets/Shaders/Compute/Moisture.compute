@@ -5,7 +5,7 @@
 [numthreads(GROUP_SIZE, GROUP_SIZE, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 {
-	const float2 _zero = float2(0, 0);
+	const int2 _zero = int2(0, 0);
 
 	uint2 atlasID = GetIndex(Pos, Params[0].s_atlas, id.xy, _zero);
 	uint2 splatID = GetIndex(_zero, Params[0].s_splat, id.xy, _zero);

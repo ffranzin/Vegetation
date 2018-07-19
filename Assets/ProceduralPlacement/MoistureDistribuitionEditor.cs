@@ -5,7 +5,7 @@ using UnityEditor;
 [CustomEditor(typeof(MoistureDistribuition))]
 public class MoistureDistribuitionEditor : Editor
 {
-    private Vector2 testOrigin;
+    private Vector2Int testOrigin;
 
     public override void OnInspectorGUI()
     {
@@ -14,19 +14,17 @@ public class MoistureDistribuitionEditor : Editor
         DrawDefaultInspector();
 
         EditorGUILayout.Space();
-        testOrigin = EditorGUILayout.Vector2Field(new GUIContent("Test Origin"), testOrigin);
-
+        testOrigin = EditorGUILayout.Vector2IntField(new GUIContent("Test Origin"), testOrigin);
 
         if (EditorGUI.EndChangeCheck())
         {
             MoistureDistribuition md = (MoistureDistribuition)target;
 
-            testOrigin.x = Mathf.Max(0f, testOrigin.x);
-            testOrigin.y = Mathf.Max(0f, testOrigin.y);
-
             if (Application.isPlaying)
             {
-                //Debug.Log("Updating...");
+                testOrigin.Clamp(
+                    Vector2Int.zero,
+                    md.TexManager.AtlasDimensions - md.TexManager.SplatDimensions);
 
                 md.UpdateParameters();
                 md.UpdateCurves();

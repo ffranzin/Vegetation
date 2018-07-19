@@ -18,10 +18,10 @@ struct Parameters
 	float w_waterSpread;
 
 	// Size of the Atlas Textures (TexHeight and TexWater)
-	float2 s_atlas;
+	int2 s_atlas;
 
 	// Size of the Splats and Aux textures (TexMeanH, TexSlope, TexMoisture, TexVPass, etc.)
-	float2 s_splat;
+	int2 s_splat;
 };
 
 // ************************************************ //
@@ -40,7 +40,7 @@ StructuredBuffer<float> CurveWaterV;
 // ************************************************ //
 // Textures
 // ************************************************ //
-float2 Pos; // origin (in the Altas) from where the splats will be generated
+int2 Pos; // origin (in the Altas) from where the splats will be generated
 
 // ************************************************ //
 // Textures
@@ -62,7 +62,7 @@ RWTexture2D<float> TexHPass;
 //
 //
 //
-inline uint2 GetIndex(float2 origin, float2 size, float2 index, float2 offset)
+inline uint2 GetIndex(int2 origin, int2 size, int2 index, int2 offset)
 {
 //#if !UNITY_UV_STARTS_AT_TOP
 //	offset.y = -offset.y;

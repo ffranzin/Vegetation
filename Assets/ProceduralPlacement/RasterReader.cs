@@ -160,7 +160,7 @@ public class RasterReader
         Gdal.AllRegister();
         Driver driver = Gdal.GetDriverByName("GTiff");
 
-        string[] options = { "BLOCKXSIZE=256", "BLOCKYSIZE=256" }; ///////////////////////
+        string[] options = { "BLOCKXSIZE=128", "BLOCKYSIZE=128" }; ///////////////////////
 
         Dataset dataset = driver.Create(path, sizeX, sizeY, bands, dataType, options);
 

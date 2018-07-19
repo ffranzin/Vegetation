@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
@@ -7,21 +8,8 @@ using UnityEngine;
 //[ExecuteInEditMode]
 public class TextureManager : MonoBehaviour
 {
-    [System.Serializable]
-    public struct TextureSize
-    {
-        public int width;
-        public int height;
-
-        public TextureSize(int width, int height)
-        {
-            this.width = width;
-            this.height = height;
-        }
-    }
-
-    public string heighmapPath; // = MapsPath + "heightmap_Rfloat.tif";
-    public string watermapPath; // = MapsPath + "watermap_Rfloat.tif";
+    public string heighmapPath; // = AtlasPath + "heightmap_Rfloat.tif";
+    public string watermapPath; // = AtlasPath + "watermap_Rfloat.tif";
     [Space]
     public RenderTextureFormat texFormat = RenderTextureFormat.RFloat;
     public FilterMode filterMode = FilterMode.Bilinear;
@@ -34,15 +22,16 @@ public class TextureManager : MonoBehaviour
     public RawImage waterSpreadRawImg;
     public RawImage moistureRawImg;
 
-    public string MapsPath { get { return /*Application.dataPath +*/ "Assets/Resources/Maps/"; } }
+    public string AtlasPath { get { return /*Application.dataPath +*/ "Assets/Resources/Maps/"; } }
 
     public int Width { get { return m_heightmapInfo.rasterSizeX; } }
     public int Height { get { return m_heightmapInfo.rasterSizeY; } }
-    public int Resolution { get { return Width * Height; } }
-    public int SizeInBytes { get { return Resolution * sizeof(float); } }
-    public bool IsHeightDataLoaded { get { return HeightData != null && HeightData.Length > 0 && HeightData.Length == Resolution; } }
-    public bool IsWaterDataLoaded { get { return WaterData != null && WaterData.Length > 0 && WaterData.Length == Resolution; } }
-    public Vector2 Dimensions { get { return new Vector2(Width, Height); } }
+    public int AtlasResolution { get { return Width * Height; } }
+    public int SizeInBytes { get { return AtlasResolution * sizeof(float); } }
+    public bool IsHeightDataLoaded { get { return HeightData != null && HeightData.Length > 0 && HeightData.Length == AtlasResolution; } }
+    public bool IsWaterDataLoaded { get { return WaterData != null && WaterData.Length > 0 && WaterData.Length == AtlasResolution; } }
+    public Vector2Int AtlasDimensions { get { return new Vector2Int(Width, Height); } }
+    public Vector2Int SplatDimensions { get; private set; }
 
     public float[] HeightData { get; private set; }
     public float[] WaterData { get; private set; }
@@ -69,7 +58,7 @@ public class TextureManager : MonoBehaviour
     /// <returns></returns>
     public float[] LoadHeightData()
     {
-        heighmapPath = string.IsNullOrEmpty(heighmapPath) ? (MapsPath + "heightmap_Rfloat.tif") : heighmapPath;
+        heighmapPath = string.IsNullOrEmpty(heighmapPath) ? (AtlasPath + "heightmap_Rfloat.tif") : heighmapPath;
 
         HeightData = RasterReader.ReadTIFF(heighmapPath, out m_heightmapInfo);
 
@@ -87,7 +76,7 @@ public class TextureManager : MonoBehaviour
     /// <returns></returns>
     public float[] LoadWaterData()
     {
-        watermapPath = string.IsNullOrEmpty(watermapPath) ? (MapsPath + "watermap_Rfloat.tif") : watermapPath;
+        watermapPath = string.IsNullOrEmpty(watermapPath) ? (AtlasPath + "watermap_Rfloat.tif") : watermapPath;
 
         WaterData = RasterReader.ReadTIFF(watermapPath, out m_watermapInfo);
 
@@ -141,14 +130,16 @@ public class TextureManager : MonoBehaviour
         Debug.Log("Data cleaned.");
     }
 
-    public void InitTextures(Vector2 mainMapsSize, Vector2 auxMapsSize)
+    public void InitTextures(Vector2Int atlasMapsSize, Vector2Int splatsMapsSize)
     {
         //ReleaseTextures();
 
+        SplatDimensions = splatsMapsSize;
+
         RenderTextureDescriptor mainDescriptor = new RenderTextureDescriptor()
         {
-            width = (int)mainMapsSize.x,
-            height = (int)mainMapsSize.y,
+            width = atlasMapsSize.x,
+            height = atlasMapsSize.y,
             colorFormat = texFormat,
             depthBufferBits = 0,
             volumeDepth = 1,
@@ -161,8 +152,8 @@ public class TextureManager : MonoBehaviour
 
         RenderTextureDescriptor auxDescriptor = new RenderTextureDescriptor()
         {
-            width = (int)auxMapsSize.x,
-            height = (int)auxMapsSize.y,
+            width = splatsMapsSize.x,
+            height = splatsMapsSize.y,
             volumeDepth = 1,
             colorFormat = texFormat,
             depthBufferBits = 0,
@@ -193,6 +184,16 @@ public class TextureManager : MonoBehaviour
         m_vPassTex.filterMode = filterMode;
         m_hPassTex.filterMode = filterMode;
 
+        //m_heightMapTex.antiAliasing = 0;
+        //m_waterMapTex.antiAliasing = 0;
+        //m_waterSpreadTex.antiAliasing = 0;
+        //m_meanHeightTex.antiAliasing = 0;
+        //m_relativeHeightTex.antiAliasing = 0;
+        //m_slopeTex.antiAliasing = 0;
+        //m_moistureTex.antiAliasing = 0;
+        //m_vPassTex.antiAliasing = 0;
+        //m_hPassTex.antiAliasing = 0;
+
         m_heightMapTex.Create();
         m_waterMapTex.Create();
         m_waterSpreadTex.Create();
@@ -205,7 +206,7 @@ public class TextureManager : MonoBehaviour
 
         if (IsHeightDataLoaded)
         {
-            Texture tempHeightTex = MakeTexture(HeightData, mainMapsSize);
+            Texture tempHeightTex = MakeTexture(HeightData, atlasMapsSize);
             Graphics.Blit(tempHeightTex, m_heightMapTex);
             Debug.Log("Height data loaded to the GPU.");
         }
@@ -214,7 +215,7 @@ public class TextureManager : MonoBehaviour
 
         if (IsWaterDataLoaded)
         {
-            Texture tempWaterTex = MakeTexture(WaterData, mainMapsSize);
+            Texture tempWaterTex = MakeTexture(WaterData, atlasMapsSize);
             Graphics.Blit(tempWaterTex, m_waterMapTex);
             Debug.Log("Water data loaded to the GPU.");
         }
@@ -252,25 +253,91 @@ public class TextureManager : MonoBehaviour
         return tex;
     }
 
-    public void SaveAllTextures(float[] meanHeightData, float[] relativeHeightData, float[] slopeData,
-       float[] waterSpreadData, float[] humidityData)
+    /// <summary>
+    /// Saves all the textures to files (except de HeightMap and WaterMap).
+    /// </summary>
+    public void SaveAllTextures(string sufix)
     {
-        Debug.LogWarning("Nope!");
-        return;
+        int x = SplatDimensions.x;
+        int y = SplatDimensions.y;
 
-        //int x = HeightmapInfo.rasterSizeX;
-        //int y = HeightmapInfo.rasterSizeY;
+        RenderTexture tmpRT = new RenderTexture(x, y, 1, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Linear);
+        tmpRT.Create();
 
-        //RasterReader.WriteTIFF(meanHeightData, MapsPath + "Outputs/meanHeight_RFloat.tif", x, y);
-        //RasterReader.WriteTIFF(relativeHeightData, MapsPath + "Outputs/relativeHeight_RFloat.tif", x, y);
-        //RasterReader.WriteTIFF(slopeData, MapsPath + "Outputs/slope_RFloat.tif", x, y);
-        //RasterReader.WriteTIFF(waterSpreadData, MapsPath + "Outputs/waterSpread_RFloat.tif", x, y);
-        //RasterReader.WriteTIFF(humidityData, MapsPath + "Outputs/humidity_RFloat.tif", x, y);
+        Texture2D tmp2DTex = new Texture2D(x, y, TextureFormat.RGBAFloat, false, true);
 
+        RenderTexture currentActiveRT = RenderTexture.active;
+
+        RenderTexture.active = tmpRT;
+
+        if (m_meanHeightTex != null)
+        {
+            SaveRenderTexture(m_meanHeightTex, AtlasPath + "Outputs/meanHeight_RFloat" + sufix + ".tif", tmpRT, tmp2DTex);
+        }
+        if (m_relativeHeightTex != null)
+        {
+            SaveRenderTexture(m_relativeHeightTex, AtlasPath + "Outputs/relativeHeight_RFloat" + sufix + ".tif", tmpRT, tmp2DTex);
+        }
+        if (m_slopeTex != null)
+        {
+            SaveRenderTexture(m_slopeTex, AtlasPath + "Outputs/slope_RFloat" + sufix + ".tif", tmpRT, tmp2DTex);
+        }
+        if (m_waterSpreadTex != null)
+        {
+            SaveRenderTexture(m_waterSpreadTex, AtlasPath + "Outputs/waterSpread_RFloat" + sufix + ".tif", tmpRT, tmp2DTex);
+        }
+        if (m_moistureTex != null)
+        {
+            SaveRenderTexture(m_moistureTex, AtlasPath + "Outputs/moisture_RFloat" + sufix + ".tif", tmpRT, tmp2DTex);
+        }
+
+        RenderTexture.active = currentActiveRT;
+
+        tmpRT.Release();
     }
 
-    //private void OnDestroy()
-    //{
-    //    ReleaseTextures();
-    //}
+    /// <summary>
+    /// Extracts a single channel from RGBAFloat texture.
+    /// </summary>
+    /// <param name="tex"></param>
+    /// <param name="channel"> 0 1 2 3 <=> R G B A</param>
+    /// <returns></returns>
+    private float[] GetChannel(Texture2D tex, int channel)
+    {
+        if (tex.format != TextureFormat.RGBAFloat)
+        {
+            Debug.LogError("[GetChannel] TextureFormat must be RGBAFloat.");
+            return null;
+        }
+
+        float[] data = tex.GetRawTextureData<float>().ToArray();
+        float[] singleChannel = new float[data.Length / 4];
+
+        for (int i = channel; i < data.Length; i += 4)
+        {
+            singleChannel[i / 4] = data[i];
+        }
+
+        Array.Reverse(singleChannel);
+
+        for (int i = 0; i < tex.height; i++)
+        {
+            Array.Reverse(singleChannel, i * tex.width, tex.width);
+        }
+
+        return singleChannel;
+    }
+    
+    private void SaveRenderTexture(RenderTexture RT, string outputPath, RenderTexture tmpRT, Texture2D tmp2DTex)
+    {
+        int x = RT.width;
+        int y = RT.height;
+
+        Graphics.Blit(RT, tmpRT);
+
+        tmp2DTex.ReadPixels(new Rect(0, 0, x, y), 0, 0);
+        tmp2DTex.Apply();
+
+        RasterReader.WriteTIFF(GetChannel(tmp2DTex, 0), outputPath, x, y);
+    }
 }
