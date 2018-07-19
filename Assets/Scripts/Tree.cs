@@ -133,7 +133,9 @@ public class Tree : MonoBehaviour
 
     uint[] args = new uint[5] { 0, 0, 0, 0, 0 };
 
-    int positionsGenerated = 0;
+    public int positionsGenerated = 0;
+    
+
 
     Mesh drawMesh;
 
@@ -146,7 +148,7 @@ public class Tree : MonoBehaviour
 
         if (m_material == null) Debug.LogError("Some Material arent generated.");
 
-        m_material.SetInt("_myPositionArrayIndex", myIndexInTreePool * GlobalManager.treeBufferSize);
+        m_material.SetInt("_myIndexInNodePool", myIndexInTreePool);
 
         m_material.SetColor("_Color", temp_color);
 
@@ -163,23 +165,24 @@ public class Tree : MonoBehaviour
     public void Update()
     {
         if (positionsGenerated == 0) return;
+
+        Debug.Log(myIndexInTreePool + "  " + positionsGenerated);
+
         Graphics.DrawMeshInstancedIndirect(drawMesh, 0, m_material, new Bounds(Vector3.zero, Vector3.one * 100000), argsBuffer);
     }
 
 
     public void UpdateBuffers()
     {
-        positionsGenerated = GlobalManager.positionsPerTreeAmountData[myIndexInTreePool];
+        positionsGenerated = TreePool.positionsPerTreeAmountData[myIndexInTreePool];
         
         m_material.SetColor("_Color", temp_color);
-
-        m_material.SetBuffer("_positionsPerTreeIndexBuffer", GlobalManager.positionsPerTreeBuffer);
+        
+        m_material.SetTexture("_positionsTexture", TreePool.positionTexture);
 
         args[1] = (uint)positionsGenerated;
 
         argsBuffer.SetData(args);
-        
-        //Debug.Log(myIndexInTreePool + "  " + positionsGenerated);
     }
 
 

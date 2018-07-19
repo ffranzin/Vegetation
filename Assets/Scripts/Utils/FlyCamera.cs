@@ -3,6 +3,7 @@
 
 public class FlyCamera : MonoBehaviour
 {
+    Transform iniPos;
 	public bool dynamicNearPlane = true;
 	public float minSpeed = 0.5f;
 	public float mainSpeed = 10f; // Regular speed.
@@ -21,6 +22,9 @@ public class FlyCamera : MonoBehaviour
 	private void Start()
 	{
 		MatchSurfaceNormal();
+        iniPos = new GameObject().transform;
+        iniPos.transform.position = Camera.main.transform.position;
+        iniPos.transform.rotation = Camera.main.transform.rotation;
 	}
 
 	void MatchSurfaceNormal(float maxDegreesDelta = 9999)
@@ -34,10 +38,18 @@ public class FlyCamera : MonoBehaviour
 	{
 		Vector3 lastPosition = transform.position;
 
+        if (transform.position.y < 1)
+            transform.position = transform.position + Vector3.up * 30;
+
 		if (Input.GetKey(KeyCode.X))
 			MatchSurfaceNormal(1f);
-        
-		ProcessMouse();
+        if (Input.GetKeyDown(KeyCode.I))
+        {
+            Camera.main.transform.position = iniPos.position;
+            Camera.main.transform.rotation = iniPos.rotation;
+        }
+
+        ProcessMouse();
 
 		float distance = (transform.position - lastPosition).magnitude;
 		velocity = distance / Time.deltaTime;

@@ -53,16 +53,14 @@ void ComputeSplat (uint3 id : SV_DispatchThreadID)
 	int init = id.x * (BLOCK_SIZE / NUM_THREAD);
 	int size = init + (BLOCK_SIZE / NUM_THREAD);
 
-	QuadTreeInfo qti = _qti[0];
-
-	float res = qti.currentNodeWorldSize / qti.currentNodeAtlasSize;
-	float radius = qti.treeRadius / res;
+	float res = _qti[0].currentNodeWorldSize / _qti[0].currentNodeAtlasSize;
+	float radius = _qti[0].treeRadius / res;
 
 	for(int i = init; i < size; i++)
 	{
 		if(_positionsBuffer[i].x == INFINITY) continue;
 
-		float2 p = WorldPosition2AtlasCoord(qti, _positionsBuffer[i]);
+		float2 p = WorldPosition2AtlasCoord(_qti[0], _positionsBuffer[i]);
 
 		FillTexture(p, radius);
 	}

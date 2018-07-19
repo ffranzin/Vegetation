@@ -1,0 +1,192 @@
+﻿
+#pragma kernel ComputePosition
+#pragma kernel AdjustIniPos
+#pragma kernel UpdatePosCounter
+#include "Utils.cginc"
+
+
+RWTexture2D <float4> _texture;
+RWTexture2D <float4> _height;
+RWStructuredBuffer<float2> _positionsBuffer;
+RWStructuredBuffer<int> _globalTreeCountPositionsBuffer;
+
+RWTexture2D <float2> _positionsTexture;
+
+RWStructuredBuffer<QuadTreeInfo> _qti;
+
+//Store initial position and  amount of positions per node in NodePool 
+RWStructuredBuffer<float2> _globalPosTreeIniSizeBuffer;
+
+int _myIdInNodePool;
+int _globalNodePoolSize;
+int _globalTreePoolSize;
+float _globalTerrainSize;
+
+float GetHeight(float2 pos)
+{
+	return _height[pos.xy].x;
+}
+
+float GetSlope(float2 pos)
+{
+	return .7;
+}
+
+float GetHumidity(float2 pos)
+{
+	return .7;
+}
+
+
+float EvaluateCurves(float2 pos, float2 atlasUV, int i)
+{
+	int nInfo = BLOCK_SIZE;
+	int arrayOffset = i * nInfo;
+	float atlasInfo = _texture[atlasUV].x;
+	
+	int currentIndexHeight		= nInfo * GetHeight(pos);
+	int currentIndexHumidity	= nInfo * GetHumidity(pos);
+	int currentIndexSlope		= nInfo * GetSlope(pos);
+	int currentIndexSensitive	= nInfo * atlasInfo;
+	int currentIndexNecessity	= nInfo * atlasInfo;
+
+	float height	= _globalTreeHeightInfo[arrayOffset + currentIndexHeight];
+	float humidity	= _globalTreeHumidityInfo[arrayOffset + currentIndexHeight];
+	float slope		= _globalTreeSlopeInfo[arrayOffset + currentIndexHeight];
+	float sensitive = _globalTreeSensitiveInfo[arrayOffset + currentIndexHeight];
+	float necessity = _globalTreeNecessityInfo[arrayOffset + currentIndexHeight];
+
+	float curves = height;
+	
+	return curves;
+}
+
+void SetSize(int tree)
+{
+	tree = _globalTreePoolSize * _myIdInNodePool + tree;
+	_globalPosTreeIniSizeBuffer[tree].y ++;
+}
+
+
+int EvaluatePosition(float2 wPos)
+{
+	//upper atlas info
+	float2 uv = WorldPosition2AtlasInfoUpperLevelUV(_qti[0], wPos);
+	float4 upperLevelInfo = _texture[uv];
+
+	int r = 3;// CustomRand(wPos, 0, 1);
+
+	int currentIndex = _globalTreeCountPositionsBuffer[r];
+
+	_globalTreeCountPositionsBuffer[r]++;
+	
+	_positionsTexture[float2(currentIndex, r)] = float2(wPos.x, wPos.y) / _globalTerrainSize;
+
+	SetSize(r);
+
+	return 1;
+}
+
+
+
+void SetAllIniSize()
+{
+	int iOffset = _globalTreePoolSize * _myIdInNodePool;
+
+	for(int i = 0; i<_globalTreePoolSize; i++)
+	{
+		_globalPosTreeIniSizeBuffer[iOffset + i].x = _globalTreeCountPositionsBuffer[i];
+		_globalPosTreeIniSizeBuffer[iOffset + i].y = 0;
+	}
+}
+
+
+
+
+[numthreads(1,1,1)]
+void ComputePosition (uint3 id : SV_DispatchThreadID)
+{
+	SetAllIniSize(); 
+
+	for(int i = 0; i < BLOCK_SIZE; i++)
+	{
+		_positionsBuffer[i] = NormalizedPos2ScaledWorldPos(	_GlobalPrecomputedPositionL1[i], 
+															_qti[0].currentNodeWorldOrigin, 
+															_qti[0].currentNodeWorldSize);
+		
+		_positionsBuffer[i] *= EvaluatePosition(_positionsBuffer[i]);
+	}
+}
+
+
+
+
+
+
+[numthreads(500,1,1)]
+void AdjustIniPos(uint3 id : SV_DispatchThreadID)
+{
+	int NUM_THREAD = 500;
+
+	int init = id.x * (_globalNodePoolSize / NUM_THREAD);
+	int size = init + (_globalNodePoolSize / NUM_THREAD);
+
+	int delOffset = _myIdInNodePool * _globalTreePoolSize;
+
+	for(int i = init; i < size; i++)
+	{
+		for(int j = 0; j < _globalTreePoolSize; j++)
+		{
+			int delBlockIni		= _globalPosTreeIniSizeBuffer[delOffset + j].x;
+			int updateBlockIni	= _globalPosTreeIniSizeBuffer[i * _globalTreePoolSize + j].x;
+
+			if(delBlockIni < updateBlockIni)
+			{
+				_globalPosTreeIniSizeBuffer[i * _globalTreePoolSize + j].x -= _globalPosTreeIniSizeBuffer[delOffset + j].y;
+			}
+		}
+	}
+}
+
+
+
+[numthreads(1,1,1)]
+void UpdatePosCounter()
+{
+	for(int i = 0; i < _globalTreePoolSize; i++)
+	{
+		_globalTreeCountPositionsBuffer[i] -= 
+		_globalPosTreeIniSizeBuffer[_myIdInNodePool * _globalTreePoolSize + i].y;
+
+		_globalPosTreeIniSizeBuffer[_myIdInNodePool * _globalTreePoolSize + i].y = 0;
+
+	}
+}
+
+
+
+
+
+
+
+/*
+	float hasInfo = upperLevelInfo.x;
+
+	if(hasInfo > 0.01 && _qti[0].vegLevel > 1)	return INFINITY;
+	
+	int r = 0 ;//_qti[0].vegLevel * 3 - 1;
+	
+	if( _qti[0].vegLevel == 1)
+	{
+		r = CustomRand(wPos, 0, 2);
+	}
+	else if( _qti[0].vegLevel == 2)
+	{
+		r = CustomRand(wPos, 2, 4);
+	}
+	else if( _qti[0].vegLevel == 3)
+	{
+		r = CustomRand(wPos, 4, 6);
+	}
+	*/
+	//if(EvaluateCurves(wPos, uv, r) < 0.8)	return INFINITY;

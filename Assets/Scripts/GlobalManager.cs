@@ -6,42 +6,32 @@ using UnityEngine;
 public class GlobalManager : MonoBehaviour
 {
     public static Atlas m_atlas;
-
-    public static readonly int treeBufferSize = 50000;
-
+    
     public static float VEG_MIN_DIST_L1 = 10;
     public static float VEG_MIN_DIST_L2 = 5;
     public static float VEG_MIN_DIST_L3 = 2;
 
-    public static int lowerestQuadTreeBlockSize = 32;
+    public static int lowerestQuadTreeBlockSize = 128;
     
-    public static float VIEW_RADIUS_VEG_L1 = 500;
-    public static float VIEW_RADIUS_VEG_L2 = 400;
+    public static float VIEW_RADIUS_VEG_L1 = 2000;
+    public static float VIEW_RADIUS_VEG_L2 = 1000;
     public static float VIEW_RADIUS_VEG_L3 = 500;
      
     /// <summary>
-    /// BUFFERS
+    /// Tmp buffer used to store positions generated to one node block. And after used to fill splat map.
+    /// --Will be changed by the positionstexture.
     /// </summary>
     public static ComputeBuffer positionsBuffer;
-    public static ComputeBuffer positionsPerTreeBuffer;
-    public static ComputeBuffer positionsPerTreeIndexBuffer;
 
     public static ComputeBuffer globalPrecomputedTileBufferL1;
     public static ComputeBuffer globalPrecomputedTileBufferL2;
     public static ComputeBuffer globalPrecomputedTileBufferL3;
 
-    public static ComputeBuffer globalTreeHumidityInfo;
-    public static ComputeBuffer globalTreeSlopeInfo;
-    public static ComputeBuffer globalTreeHeightInfo;
-    public static ComputeBuffer globalTreeSensitiveInfo;
-    public static ComputeBuffer globalTreeNecessityInfo;
-
-
-    public static ComputeBuffer globalDiscretizedTreeInfo;
-    public static int[] zeros;
-    public static int[] positionsPerTreeAmountData;
-
-
+    /// <summary>
+    /// Precompute tiles of positions. 
+    /// These tiles garantee MinDistance between all positions, inside it.
+    /// Each layer contains and specific tile.
+    /// </summary>
     private static void FillAllPrecomputedPositinsBuffer()
     {
         List<Vector2> positions = new List<Vector2>();
@@ -68,93 +58,36 @@ public class GlobalManager : MonoBehaviour
         positions = null;
     }
 
-
-
-    private static void FillDiscretizedTreeInfoBuffer()
-    {
-        List<float> slopeInfo = new List<float>();
-        List<float> heightInfo = new List<float>();
-        List<float> humidityInfo = new List<float>();
-        List<float> sensitiveInfo = new List<float>();
-        List<float> necessityInfo = new List<float>();
-        
-        for (int i = 0; i < TreePool.size; i++)
-        {
-            Tree t = TreePool.treePool[i];
-
-            slopeInfo.AddRange(t.TreeSlopeDiscretized);
-            heightInfo.AddRange(t.TreeHeightDiscretized);
-            humidityInfo.AddRange(t.TreeHumidityDiscretized);
-            sensitiveInfo.AddRange(t.TreeSensitiveDiscretized);
-            necessityInfo.AddRange(t.TreeNecessityDiscretized);
-        }
-        
-        globalTreeHumidityInfo  = new ComputeBuffer(TreePool.size, sizeof(float) * Tree.N_INFO_DISCRETIZED);
-        globalTreeSlopeInfo     = new ComputeBuffer(TreePool.size, sizeof(float) * Tree.N_INFO_DISCRETIZED);
-        globalTreeHeightInfo    = new ComputeBuffer(TreePool.size, sizeof(float) * Tree.N_INFO_DISCRETIZED);
-        globalTreeSensitiveInfo = new ComputeBuffer(TreePool.size, sizeof(float) * Tree.N_INFO_DISCRETIZED);
-        globalTreeNecessityInfo = new ComputeBuffer(TreePool.size, sizeof(float) * Tree.N_INFO_DISCRETIZED);
-        
-        globalTreeSlopeInfo.SetData(slopeInfo);
-        globalTreeHeightInfo.SetData(heightInfo);
-        globalTreeHumidityInfo.SetData(humidityInfo);
-        globalTreeSensitiveInfo.SetData(sensitiveInfo);
-        globalTreeNecessityInfo.SetData(necessityInfo);
-        
-        Shader.SetGlobalBuffer("_GlobalTreeSlopeInfo", globalTreeSlopeInfo);
-        Shader.SetGlobalBuffer("_GlobalTreeHeightInfo", globalTreeHeightInfo);
-        Shader.SetGlobalBuffer("_GlobalTreeHumidityInfo", globalTreeHumidityInfo);
-        Shader.SetGlobalBuffer("_GlobalTreeSensitiveInfo", globalTreeSensitiveInfo);
-        Shader.SetGlobalBuffer("_GlobalTreeNecessityInfo", globalTreeNecessityInfo);
-
-        slopeInfo.Clear();
-        heightInfo.Clear();
-        humidityInfo.Clear();
-        sensitiveInfo.Clear();
-        necessityInfo.Clear();
-    }
     
-
-
     public static void CreateAtlas()
     {
         m_atlas = new Atlas(RenderTextureFormat.ARGBFloat, FilterMode.Bilinear, 8192, 128, true);
 
         if (m_atlas == null) Debug.LogError("Atlas cannot be generated.");
 
-        tmpDebudAtlas = GameObject.Find("Plane");
-        tmpDebudAtlas.GetComponent<MeshRenderer>().material.SetTexture("_MainTex", m_atlas.texture);
+        GameObject tmpDebudAtlas = GameObject.Find("Plane");
+        //tmpDebudAtlas.GetComponent<MeshRenderer>().material.SetTexture("_MainTex", m_atlas.texture);
     }
+    
 
-
-    static GameObject tmpDebudAtlas;
-   
     void Start()
     {
         CreateAtlas();
 
-        positionsBuffer = new ComputeBuffer(treeBufferSize, 8);
-        positionsPerTreeIndexBuffer = new ComputeBuffer(TreePool.size, 4);
-        positionsPerTreeBuffer = new ComputeBuffer(treeBufferSize * TreePool.size, 8);
-        
-        positionsPerTreeAmountData = new int[TreePool.size];
-        zeros = new int[TreePool.size];
-
+        positionsBuffer = new ComputeBuffer(1000, 8);
+    
         FillAllPrecomputedPositinsBuffer();
-
-        FillDiscretizedTreeInfoBuffer();
-
-        Shader.SetGlobalInt("_GlobalBufferPerTreeSize", treeBufferSize);
     }
     
-    public static void UpdateTreeAmountData()
-    {
-        positionsPerTreeIndexBuffer.GetData(positionsPerTreeAmountData);
-    }
 
-    public static void ResetPositionsAmount()
+  
+    public void Update()
     {
-        positionsPerTreeIndexBuffer.SetData(zeros);
+        float camHeight = Mathf.Clamp(Camera.main.transform.position.y, 0, 300) / 300;
+
+        //VIEW_RADIUS_VEG_L1 = Mathf.Lerp(500, 1000, camHeight);
+        //VIEW_RADIUS_VEG_L2 = Mathf.Lerp(400, 4000, camHeight);
+        //VIEW_RADIUS_VEG_L3 = Mathf.Lerp(100, 300, camHeight);
+        VIEW_RADIUS_VEG_L1 = 12000;
     }
-    
 }
