@@ -23,19 +23,34 @@ public struct QuadTreeInfo
 public class _QuadTree
 {
     public Bounds bound;
-    public _QuadTree TL;
-    public _QuadTree TR;
-    public _QuadTree BL;
-    public _QuadTree BR;
+
+    public _QuadTree[] children = new _QuadTree[4];
+
     public _QuadTree parent;
     public int level;
     public Atlas.AtlasPageDescriptor atlasPage = null;
-    
+
     public bool positionsHasBeenGenerated = false;
-    public bool hasChild = false;
+
     public bool containsVeg = false;
 
     public int myIdInNodePool;
+
+
+    public bool hasChild
+    {
+        get
+        {
+            for (int i = 0; i < 4; i++)
+                if (children[i] == null)
+                    return false;
+
+            return true;
+        }
+    }
+
+
+
 
 
     /// <summary>
@@ -73,19 +88,16 @@ public class QuadTreeManager : MonoBehaviour
 {
     public _QuadTree m_quadTree;
 
-    Plane[] frustumPlanes;
+    static Plane[] frustumPlanes;
 
     static int QUADTREE_MAX_LEVEL;
     static int QUADTREE_VEG_LEVEL_1;
     static int QUADTREE_VEG_LEVEL_2;
     static int QUADTREE_VEG_LEVEL_3;
     
+    static int QUADTREE_MAX_GEN_POS_NODES_PER_FRAME = 64;
 
-    static int QUADTREE_MAX_GEN_NODES_PER_FRAME = 1600;
-    static int QUADTREE_MAX_OPENED_NODES_PER_FRAME = 1600;
-
-    static int QUADTREE_GEN_NODES = 0;
-    static int QUADTREE_OPENED_NODES = 0;
+    static int QUADTREE_GEN_POS_NODE = 0;
 
 
     void Start()
@@ -100,10 +112,7 @@ public class QuadTreeManager : MonoBehaviour
         QUADTREE_VEG_LEVEL_1 = QUADTREE_MAX_LEVEL - 2;
         QUADTREE_VEG_LEVEL_2 = QUADTREE_MAX_LEVEL - 1;
         QUADTREE_VEG_LEVEL_3 = QUADTREE_MAX_LEVEL;
-
-        QUADTREE_VEG_LEVEL_1 = 2;
-        QUADTREE_VEG_LEVEL_2 = 111;
-        QUADTREE_VEG_LEVEL_3 = 111;
+        
     }
 
 
@@ -125,10 +134,8 @@ public class QuadTreeManager : MonoBehaviour
 
         Utils.ShowBoundLines(qt.bound, Color.black);
 
-        ShowBounds(qt.BL);
-        ShowBounds(qt.BR);
-        ShowBounds(qt.TL);
-        ShowBounds(qt.TR);
+        foreach (_QuadTree c in qt.children)
+            ShowBounds(c);
     }
 
 
@@ -139,28 +146,47 @@ public class QuadTreeManager : MonoBehaviour
 
 
     /// <summary>
+    /// Are visible node if is inside frustum camera and inside an radius of view.
+    /// The radius of view are variable between node height.
+    /// </summary>
+    public static bool NodeIsVisible(_QuadTree qt)
+    {
+        if (!GeometryUtility.TestPlanesAABB(frustumPlanes, qt.bound)) return false;
+
+        float dist = Mathf.Sqrt(qt.bound.SqrDistance(Camera.main.transform.position.x0z()));
+
+        if (qt.level <= QUADTREE_VEG_LEVEL_1 && GlobalManager.VIEW_RADIUS_VEG_L1 > dist) return true;
+        if (qt.level <= QUADTREE_VEG_LEVEL_2 && GlobalManager.VIEW_RADIUS_VEG_L2 > dist) return true;
+        if (qt.level <= QUADTREE_VEG_LEVEL_3 && GlobalManager.VIEW_RADIUS_VEG_L3 > dist) return true;
+
+        return false;
+    }
+
+
+
+    /// <summary>
     /// Rescale child's bound based in position.
     /// </summary>
     private static void GenBoundChild(Bounds bParent, ref Bounds bNode, int boundPosition)
     {
-        //|1 = TL|   |2 = TR|   |3 = BL|  |4 = BR| 
+        //|0 = TL|   |1 = TR|   |2 = BL|  |3 = BR| 
 
-        if (boundPosition == 1)
+        if (boundPosition == 0)
         {
             bNode.min = new Vector3(bParent.min.x, 0, ((bParent.min.z + bParent.max.z) / 2));
             bNode.max = new Vector3(((bParent.min.x + bParent.max.x) / 2), 0, bParent.max.z);
         }
-        else if (boundPosition == 2)
+        else if (boundPosition == 1)
         {
             bNode.min = new Vector3(((bParent.min.x + bParent.max.x) / 2), 0, ((bParent.min.z + bParent.max.z) / 2));
             bNode.max = new Vector3(bParent.max.x, 0, bParent.max.z);
         }
-        else if (boundPosition == 3)
+        else if (boundPosition == 2)
         {
             bNode.min = new Vector3(bParent.min.x, 0, bParent.min.z);
             bNode.max = new Vector3(((bParent.min.x + bParent.max.x) / 2), 0, ((bParent.min.z + bParent.max.z) / 2));
         }
-        else if (boundPosition == 4)
+        else if (boundPosition == 3)
         {
             bNode.min = new Vector3(((bParent.min.x + bParent.max.x) / 2), 0, bParent.min.z);
             bNode.max = new Vector3(bParent.max.x, 0, ((bParent.min.z + bParent.max.z) / 2));
@@ -168,7 +194,7 @@ public class QuadTreeManager : MonoBehaviour
     }
 
 
-    
+
     /// <summary>
     /// Subdivide an node and set all parameters of new childs.
     /// Any node are created, only requested on NodePool.
@@ -177,30 +203,19 @@ public class QuadTreeManager : MonoBehaviour
     private static void SubdivideQuadTree(_QuadTree qt, bool subdivideAll = false)
     {
         if (qt.level > QUADTREE_MAX_LEVEL || NodePool.freeNodes < 4) return;
+
+        for (int i = 0; i < qt.children.Length; i++)
+        {
+            qt.children[i] = NodePool.NodeRequest();
+            qt.children[i].parent = qt;
+            qt.children[i].level = qt.level + 1;
+            qt.children[i].positionsHasBeenGenerated = false;
+            qt.children[i].containsVeg = false;
+            GenBoundChild(qt.bound, ref qt.children[i].bound, i);
+        }
         
-        qt.TL = NodePool.NodeRequest();
-        qt.TR = NodePool.NodeRequest();
-        qt.BL = NodePool.NodeRequest();
-        qt.BR = NodePool.NodeRequest();
-        
-        qt.TL.parent = qt.TR.parent = qt.BL.parent = qt.BR.parent = qt;
-        qt.TL.level = qt.TR.level = qt.BL.level = qt.BR.level = qt.level + 1;
-        qt.hasChild = true;
-        qt.positionsHasBeenGenerated = false;
-
-        GenBoundChild(qt.bound, ref qt.TL.bound, 1);
-        GenBoundChild(qt.bound, ref qt.TR.bound, 2);
-        GenBoundChild(qt.bound, ref qt.BL.bound, 3);
-        GenBoundChild(qt.bound, ref qt.BR.bound, 4);
-
-        QUADTREE_GEN_NODES++;
-
-        if (!subdivideAll) return;
-
-        SubdivideQuadTree(qt.TL, subdivideAll);
-        SubdivideQuadTree(qt.TR, subdivideAll);
-        SubdivideQuadTree(qt.BL, subdivideAll);
-        SubdivideQuadTree(qt.BR, subdivideAll);
+        for (int i = 0; subdivideAll && i < qt.children.Length; i++)
+            SubdivideQuadTree(qt.children[i], subdivideAll);
     }
 
 
@@ -222,13 +237,13 @@ public class QuadTreeManager : MonoBehaviour
             DispatcherComputePositions.ComputePositions(qt, GlobalManager.VEG_MIN_DIST_L1 / 2, 1);
             hasDispath = true;
         }
-        else if (qt.level == QUADTREE_VEG_LEVEL_2 && false)
+        else if (qt.level == QUADTREE_VEG_LEVEL_2)
         {
             qt.atlasPage = GlobalManager.m_atlas.GetPage();
             DispatcherComputePositions.ComputePositions(qt, GlobalManager.VEG_MIN_DIST_L2 / 2, 2);
             hasDispath = true;
         }
-        else if (qt.level == QUADTREE_VEG_LEVEL_3 && false)
+        else if (qt.level == QUADTREE_VEG_LEVEL_3)
         {
             qt.atlasPage = GlobalManager.m_atlas.GetPage();
             DispatcherComputePositions.ComputePositions(qt, GlobalManager.VEG_MIN_DIST_L3 / 2, 3);
@@ -238,32 +253,13 @@ public class QuadTreeManager : MonoBehaviour
         if (hasDispath)
         {
             qt.containsVeg = true;
-            QUADTREE_GEN_NODES++;
+            QUADTREE_GEN_POS_NODE++;
         }
-        
+
         qt.positionsHasBeenGenerated = true;
     }
-
-
-
-    /// <summary>
-    /// Are visible node if is inside frustum camera and inside an radius of view.
-    /// The radius of view are variable between node height.
-    /// </summary>
-    public bool NodeIsVisible(_QuadTree qt)
-    {
-        if (!GeometryUtility.TestPlanesAABB(frustumPlanes, qt.bound)) return false;
     
-        float dist = Mathf.Sqrt(qt.bound.SqrDistance(Camera.main.transform.position.x0z()));
 
-        if (qt.level <= QUADTREE_VEG_LEVEL_1 && GlobalManager.VIEW_RADIUS_VEG_L1 > dist) return true;
-        if (qt.level <= QUADTREE_VEG_LEVEL_2 && GlobalManager.VIEW_RADIUS_VEG_L2 > dist) return true;
-        if (qt.level <= QUADTREE_VEG_LEVEL_3 && GlobalManager.VIEW_RADIUS_VEG_L3 > dist) return true;
-
-        return false;
-    }
-
-    
     /// <summary>
     /// Release all nodes that arent visible.
     /// These nodes are re-added in nodePool
@@ -272,18 +268,14 @@ public class QuadTreeManager : MonoBehaviour
     public void ClearNodes(_QuadTree qt)
     {
         if (qt == null) return;
-        
-        if (qt.hasChild)
-        {
-            ClearNodes(qt.TL);
-            ClearNodes(qt.TR);
-            ClearNodes(qt.BL);
-            ClearNodes(qt.BR);
-        }
+
+        for (int i = 0; i < qt.children.Length; i++)
+            ClearNodes(qt.children[i]);
 
         if (qt.parent != null && !NodeIsVisible(qt.parent))
             NodePool.NodeRelease(qt);
     }
+
 
 
     /// <summary>
@@ -293,38 +285,34 @@ public class QuadTreeManager : MonoBehaviour
     /// <param name="qt"></param>
     public void VerifyNewNodes(_QuadTree qt)
     {
-        if (qt == null || 
-            QUADTREE_GEN_NODES >= QUADTREE_MAX_GEN_NODES_PER_FRAME ||
-            QUADTREE_OPENED_NODES >= QUADTREE_MAX_OPENED_NODES_PER_FRAME ||
-            !NodeIsVisible(qt) || qt.level > QUADTREE_VEG_LEVEL_1) return;
-        
+        if (qt == null ||
+            QUADTREE_GEN_POS_NODE >= QUADTREE_MAX_GEN_POS_NODES_PER_FRAME ||
+            !NodeIsVisible(qt)) return;
+
         if (!qt.hasChild)
             SubdivideQuadTree(qt);
 
         if (!qt.positionsHasBeenGenerated)
             GenerateTreePositions(qt);
 
-        VerifyNewNodes(qt.BL);
-        VerifyNewNodes(qt.BR);
-        VerifyNewNodes(qt.TL);
-        VerifyNewNodes(qt.TR);
+        for (int i = 0; i < qt.children.Length; i++)
+            VerifyNewNodes(qt.children[i]);
     }
+    
+    
 
-    
-    
     private void Update()
     {
         if (m_quadTree == null) return;
-           
-        QUADTREE_OPENED_NODES = QUADTREE_GEN_NODES = 0;
-         
+
+        QUADTREE_GEN_POS_NODE = 0;
+
         frustumPlanes = GeometryUtility.CalculateFrustumPlanes(Camera.main);
 
-        if(!NodePool.LockToRelease)
-            VerifyNewNodes(m_quadTree);
+        VerifyNewNodes(m_quadTree);
 
         ClearAll();
-        
+
         TreePool.UpdateTreeAmountData();
     }
 
@@ -337,13 +325,13 @@ public class QuadTreeManager : MonoBehaviour
     {
         int currentFrameCount = Time.frameCount;
 
-        if (currentFrameCount - lastFrame < 160) return;
+        if (currentFrameCount - lastFrame < 20) return;
 
         lastFrame = currentFrameCount;
-        
+
         ClearNodes(m_quadTree);
 
-        Debug.Log("FREE NODES " + NodePool.freeNodes);
+        //Debug.Log("FREE NODES " + NodePool.freeNodes);
     }
 
 

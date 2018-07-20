@@ -17,10 +17,7 @@ public class GlobalManager : MonoBehaviour
     public static float VIEW_RADIUS_VEG_L2 = 1000;
     public static float VIEW_RADIUS_VEG_L3 = 500;
      
-    /// <summary>
-    /// Tmp buffer used to store positions generated to one node block. And after used to fill splat map.
-    /// --Will be changed by the positionstexture.
-    /// </summary>
+
     public static ComputeBuffer positionsBuffer;
 
     public static ComputeBuffer globalPrecomputedTileBufferL1;
@@ -85,9 +82,9 @@ public class GlobalManager : MonoBehaviour
     {
         float camHeight = Mathf.Clamp(Camera.main.transform.position.y, 0, 300) / 300;
 
-        //VIEW_RADIUS_VEG_L1 = Mathf.Lerp(500, 1000, camHeight);
-        //VIEW_RADIUS_VEG_L2 = Mathf.Lerp(400, 4000, camHeight);
-        //VIEW_RADIUS_VEG_L3 = Mathf.Lerp(100, 300, camHeight);
-        VIEW_RADIUS_VEG_L1 = 12000;
+        VIEW_RADIUS_VEG_L1 = Mathf.Lerp(500, UI.UI_viewRangeVegL1, camHeight);
+        VIEW_RADIUS_VEG_L2 = Mathf.Lerp(300, UI.UI_viewRangeVegL2, camHeight);
+        VIEW_RADIUS_VEG_L3 = Mathf.Lerp(100, UI.UI_viewRangeVegL3, camHeight);
+        
     }
 }

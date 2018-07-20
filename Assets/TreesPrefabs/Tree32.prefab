@@ -52,6 +52,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   myIndexInTreePool: 0
+  my_layer: 3
   globalHeightCurve:
     serializedVersion: 2
     m_Curve:
@@ -111,3 +112,4 @@ MonoBehaviour:
   - {fileID: 4300000, guid: 9e21394f98749ea44bcb9265994a61bd, type: 3}
   material: {fileID: 2100000, guid: 769715462353401448e4d166385d7562, type: 2}
   temp_color: {r: 0, g: 0.011662006, b: 1, a: 0}
+  positionsGenerated: 0

@@ -3,7 +3,8 @@ using UnityEngine;
 
 public class NodePool : MonoBehaviour {
 
-    public static readonly int NODE_POOL_SIZE = 10000;
+    public static readonly int NODE_POOL_SIZE = 8000;
+    public static readonly int MAX_BUFFER_RELEASED_PER_FRAME = 24;
 
     public static List<_QuadTree> qt_NodePool = new List<_QuadTree>();
     public static List<_QuadTree> qt_NodeToReleasePos = new List<_QuadTree>();
@@ -88,71 +89,69 @@ public class NodePool : MonoBehaviour {
     {
         if (qt == null) return;
         
-        qt.parent.hasChild = false;
-        qt.hasChild = false;
-        qt.positionsHasBeenGenerated = false;
-        qt.level = -1;
+        if(qt.parent != null)
+        {
+            for(int i = 0; i<4; i++)
+            {
+                if (qt.parent.children[i] == qt)
+                {
+                    qt.parent.children[i] = null;
+                    break;
+                }
+            }
+        }
         
-        if(qt.atlasPage != null)
+        if (qt.atlasPage != null)
         {
             GlobalManager.m_atlas.ReleasePage(qt.atlasPage);
             qt.atlasPage = null;
         }
-        
+
         if (qt.containsVeg)
             qt_NodeToReleasePos.Add(qt);
         else
-           qt_NodePool.Add(qt);
-
+            qt_NodePool.Add(qt);
+        
         qt.containsVeg = false;
     }
 
-
     
-
-    public static bool LockToRelease;
     public void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Space))
-            LockToRelease = !LockToRelease;
+        if (qt_NodeToReleasePos.Count == 0) return;
         
-        if (qt_NodeToReleasePos.Count == 0 || !LockToRelease) return;
-        
-        _QuadTree qt = qt_NodeToReleasePos[0];
+        for (int i = 0; i<MAX_BUFFER_RELEASED_PER_FRAME && qt_NodeToReleasePos.Count > 0; i++)
+        {
+            ReleaseBuffers(qt_NodeToReleasePos[0]);
 
-        ReleaseBuffers(qt);
+            qt_NodePool.Add(qt_NodeToReleasePos[0]);
 
-        qt_NodeToReleasePos.RemoveAt(0);
-        qt_NodePool.Add(qt);
+            qt_NodeToReleasePos.RemoveAt(0);
+        }
     }
 
-    
 
     /// <summary>
     /// Release all necessary buffer to invalidade 'qt' node.
     /// </summary>
     /// <param name="qt"></param>
-    static void ReleaseBuffers(_QuadTree qt)
+    public static void ReleaseBuffers(_QuadTree qt)
     {
         posIniSizeBuffer.GetData(iniTam, 0, qt.myIdInNodePool * TreePool.size, TreePool.size);
+
+        Graphics.CopyTexture(TreePool.positionTexture, TreePool.positionTextureTmp);
 
         for (int i = 0; i < TreePool.size; i++)
         {
             int ini = (int)iniTam[i].x;
             int tam = (int)iniTam[i].y;
 
-            if (tam > 0)
-            {
-                Graphics.CopyTexture(TreePool.positionTexture, TreePool.positionTextureTmp);
-
-                MoveBlock(ini, tam, i);
-
-                DispatcherComputePositions.AdjustIniSizePositionsBuffer(qt);
-
-                Graphics.CopyTexture(TreePool.positionTextureTmp, TreePool.positionTexture);
-            }
+            if (tam > 0)    MoveBlock(ini, tam, i);
         }
 
+        Graphics.CopyTexture(TreePool.positionTextureTmp, TreePool.positionTexture);
+
+        DispatcherComputePositions.AdjustIniSizePositionsBuffer(qt);
         DispatcherComputePositions.UpdatePosCounter(qt);
     }
 

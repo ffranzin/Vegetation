@@ -17,6 +17,7 @@ RWStructuredBuffer<QuadTreeInfo> _qti;
 //Store initial position and  amount of positions per node in NodePool 
 RWStructuredBuffer<float2> _globalPosTreeIniSizeBuffer;
 
+int _globalMaxPositionBufferSize;
 int _myIdInNodePool;
 int _globalNodePoolSize;
 int _globalTreePoolSize;
@@ -74,13 +75,31 @@ int EvaluatePosition(float2 wPos)
 	float2 uv = WorldPosition2AtlasInfoUpperLevelUV(_qti[0], wPos);
 	float4 upperLevelInfo = _texture[uv];
 
-	int r = 3;// CustomRand(wPos, 0, 1);
+
+	int r = 1;//_qti[0].vegLevel * 3 - 1;
+	
+	if( _qti[0].vegLevel == 1)
+	{
+		r = CustomRand(wPos, 0, 2);
+	}
+	else if( _qti[0].vegLevel == 2)
+	{
+		r = CustomRand(wPos, 2, 4);
+	}
+	else if( _qti[0].vegLevel == 3)
+	{
+		r = CustomRand(wPos, 4, 6);
+	}
+	
 
 	int currentIndex = _globalTreeCountPositionsBuffer[r];
 
+	if(currentIndex > _globalMaxPositionBufferSize)	return 0;
+
+
 	_globalTreeCountPositionsBuffer[r]++;
 	
-	_positionsTexture[float2(currentIndex, r)] = float2(wPos.x, wPos.y) / _globalTerrainSize;
+	_positionsTexture[float2(currentIndex, r)] = float2(wPos.x, wPos.y);// / _globalTerrainSize;
 
 	SetSize(r);
 

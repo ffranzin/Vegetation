@@ -12,8 +12,10 @@ public class TreePool : MonoBehaviour
     /// To access the positions of specific tree use [x, y], where y is the id of tree in treePool.  
     /// </summary>
     public static RenderTexture positionTexture;
-    
-
+    /// <summary>
+    /// Tmp buffer used to store positions generated to one node block. And after used to fill splat map.
+    /// --Will be changed by the positionstexture.
+    /// </summary>
     public static RenderTexture positionTextureTmp;
     
     /// <summary>
@@ -71,6 +73,7 @@ public class TreePool : MonoBehaviour
 
         CreatePositionTexture();
     }
+    
 
     /// <summary>
     /// Get the amount of data generated in GPU and update all trees. 
@@ -78,10 +81,20 @@ public class TreePool : MonoBehaviour
     /// </summary>
     public static void UpdateTreeAmountData()
     {
+        int[] vegAmount = new int[3];
+
+        int count = 0;
+        int level = 0;
+
         treeCountPositionsBuffer.GetData(positionsPerTreeAmountData);
 
         foreach (Tree t in treePool)
-            t.UpdateBuffers();
+        {
+            t.UpdateBuffers(out count, out level);
+            vegAmount[level - 1] += count;
+        }
+
+        UI.UpdateAmount(vegAmount);
     }
 
     
@@ -137,22 +150,22 @@ public class TreePool : MonoBehaviour
 
     void CreatePositionTexture()
     {
-        int n = 10000;
-        positionTexture = new RenderTexture(n, size, 0, RenderTextureFormat.ARGB32);
+        positionTexture = new RenderTexture(16384, treePool.Count, 0, RenderTextureFormat.RGFloat);
         positionTexture.enableRandomWrite = true;
         positionTexture.useMipMap = false;
         positionTexture.Create();
 
-        positionTextureTmp = new RenderTexture(n, size, 0, RenderTextureFormat.ARGB32);
+        positionTextureTmp = new RenderTexture(16384, treePool.Count, 0, RenderTextureFormat.RGFloat);
         positionTextureTmp.enableRandomWrite = true;
         positionTextureTmp.useMipMap = false;
         positionTextureTmp.Create();
 
+        Shader.SetGlobalInt("_globalMaxPositionBufferSize", 16000);
+
         GameObject g1 = GameObject.Find("Plane1");
         g1.GetComponent<MeshRenderer>().material.SetTexture("_MainTex", positionTexture);
-
     }
-
+    
 }
 
 

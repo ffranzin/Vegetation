@@ -3,7 +3,7 @@
 		
 	}
 	SubShader {
-        Tags { "RenderType"="Opaque" }
+        Tags { "RenderType"="Opaque"}
         LOD 200
 
         CGPROGRAM
@@ -13,8 +13,7 @@
         #pragma instancing_options procedural:setup
 
         float4 _Color;
-		float _globalTerrainSize;
-		int _myIndexInNodePool;
+		int _myIndexInTreePool;
 		float TERRAIN_HEIGHT_MULTIPLIER;
 
 		sampler2D _HeightMap;
@@ -36,14 +35,14 @@
         {
 			#ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
 				
-				int3 posUV = int3(unity_InstanceID, _myIndexInNodePool, 0);
+				int3 posUV = int3(unity_InstanceID, _myIndexInTreePool, 0);
 
-				half2 data = _positionsTexture.Load(posUV).rg * _globalTerrainSize;
+				half2 data = _positionsTexture.Load(posUV).rg;
 
 				//float2 uv = data.xy / 1024;
 				//float h = tex2Dlod(_HeightMap, float4(uv.x, uv.y, 0, 0)).x * TERRAIN_HEIGHT_MULTIPLIER;
 				float h = 0;
-				float scale = 5;
+				float scale = 1;
 
 				unity_ObjectToWorld._11_21_31_41 = float4(scale, 0, 0, 0);
 				unity_ObjectToWorld._12_22_32_42 = float4(0, scale, 0, 0);

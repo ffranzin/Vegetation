@@ -22,9 +22,7 @@ public class PrecomputedPositionsBuffer : MonoBehaviour {
 
             positions.Add(pos);
         }
-
-        positions[0] = new Vector2(.5f, .5f);
-
+        
         //Debug.Log("POSITIONS GENERATED : " + positions.Count);
         //SpawnAll(positions, boundSize);
     }

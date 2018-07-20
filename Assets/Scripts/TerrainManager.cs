@@ -3,7 +3,7 @@
 
 public class TerrainManager : MonoBehaviour {
 
-    static int TERRAIN_SIZE = (int)Mathf.Pow(2f, 13f);
+    static int TERRAIN_SIZE = (int)Mathf.Pow(2f, 14f);
 
     public static readonly Vector3 TERRAIN_ORIGIN   = new Vector3(0, 0, 0);
     public static readonly Vector3 TERRAIN_END      = new Vector3(TERRAIN_SIZE, 0, TERRAIN_SIZE);

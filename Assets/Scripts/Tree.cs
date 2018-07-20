@@ -45,6 +45,9 @@ public class Tree : MonoBehaviour
     [HideInInspector]
     public int myIndexInTreePool = 0;
 
+    [Range(1,3)]
+    public int my_layer;
+
     public AnimationCurve globalHeightCurve;
     public AnimationCurve temperatureCurve;
     public AnimationCurve humidityCurve;
@@ -135,10 +138,9 @@ public class Tree : MonoBehaviour
 
     public int positionsGenerated = 0;
     
-
-
     Mesh drawMesh;
 
+    Bounds bound;
 
     public void Start()
     {
@@ -148,7 +150,7 @@ public class Tree : MonoBehaviour
 
         if (m_material == null) Debug.LogError("Some Material arent generated.");
 
-        m_material.SetInt("_myIndexInNodePool", myIndexInTreePool);
+        m_material.SetInt("_myIndexInTreePool", myIndexInTreePool);
 
         m_material.SetColor("_Color", temp_color);
 
@@ -159,20 +161,20 @@ public class Tree : MonoBehaviour
         args[1] = (uint)positionsGenerated;
         args[2] = (uint)drawMesh.GetIndexStart(0);
         args[3] = (uint)drawMesh.GetBaseVertex(0);
+
+        bound = new Bounds(Vector3.zero, Vector3.one * 100000);
     }
 
 
     public void Update()
     {
         if (positionsGenerated == 0) return;
-
-        Debug.Log(myIndexInTreePool + "  " + positionsGenerated);
-
-        Graphics.DrawMeshInstancedIndirect(drawMesh, 0, m_material, new Bounds(Vector3.zero, Vector3.one * 100000), argsBuffer);
+        bound.center = Camera.main.transform.position;
+        Graphics.DrawMeshInstancedIndirect(drawMesh, 0, m_material, bound, argsBuffer);
     }
 
 
-    public void UpdateBuffers()
+    public void UpdateBuffers(out int genPos, out int level)
     {
         positionsGenerated = TreePool.positionsPerTreeAmountData[myIndexInTreePool];
         
@@ -183,6 +185,9 @@ public class Tree : MonoBehaviour
         args[1] = (uint)positionsGenerated;
 
         argsBuffer.SetData(args);
+
+        genPos = positionsGenerated;
+        level = my_layer;
     }
 
 
