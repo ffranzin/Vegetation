@@ -243,7 +243,7 @@ public class QuadTreeManager : MonoBehaviour
             DispatcherComputePositions.ComputePositions(qt, GlobalManager.VEG_MIN_DIST_L2 / 2, 2);
             hasDispath = true;
         }
-        else if (qt.level == QUADTREE_VEG_LEVEL_3)
+        else if (qt.level == QUADTREE_VEG_LEVEL_3 && false)
         {
             qt.atlasPage = GlobalManager.m_atlas.GetPage();
             DispatcherComputePositions.ComputePositions(qt, GlobalManager.VEG_MIN_DIST_L3 / 2, 3);

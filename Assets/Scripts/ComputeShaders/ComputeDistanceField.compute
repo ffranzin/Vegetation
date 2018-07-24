@@ -23,8 +23,9 @@ RWStructuredBuffer<QuadTreeInfo> _qti;
 
 
 
-void FillTexture(float2 atlasCenter, float radius)
+void FillTexture(float2 atlasCenter, float radius, int l)
 {
+	//radius = 4;
 	int n = radius + 1; // +1 to avoid floor rounding
 
 	for(int i = -n; i<n; i++)
@@ -37,7 +38,10 @@ void FillTexture(float2 atlasCenter, float radius)
 
 			dist = 1 - Remap(dist, 0, radius, 0.0, 1.0);
 
-			_texture[id.xy] += float4(dist, 0, 0, 1);
+			//if(l == 1)
+				_texture[id.xy] += float4(dist, 0, 0, 1);
+			//else
+			//	_texture[id.xy] += float4(0, dist, 0, 1);
 		}
 	}
 }
@@ -58,11 +62,11 @@ void ComputeSplat (uint3 id : SV_DispatchThreadID)
 
 	for(int i = init; i < size; i++)
 	{
-		if(_positionsBuffer[i].x == INFINITY) continue;
+		if(_positionsBuffer[i].x == 0) continue;
 
 		float2 p = WorldPosition2AtlasCoord(_qti[0], _positionsBuffer[i]);
 
-		FillTexture(p, radius);
+		FillTexture(p, radius, _qti[0].vegLevel);
 	}
 }
 

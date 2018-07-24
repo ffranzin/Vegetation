@@ -39,6 +39,7 @@ public class UI : MonoBehaviour {
 
     public static void UpdateAmount(int[] amount)
     {
+        return;
         amountVegL1.text = "INSTANCES VEGETATION L1 : " + amount[0]; 
         amountVegL2.text = "INSTANCES VEGETATION L2 : " + amount[1]; 
         amountVegL3.text = "INSTANCES VEGETATION L3 : " + amount[2]; 
@@ -49,6 +50,7 @@ public class UI : MonoBehaviour {
     
     private void Start()
     {
+        return;
         vr_l1 = GameObject.Find("SliderViewRangeL1").GetComponent<Slider>();
         vr_l2 = GameObject.Find("SliderViewRangeL2").GetComponent<Slider>();
         vr_l3 = GameObject.Find("SliderViewRangeL3").GetComponent<Slider>();
@@ -79,6 +81,7 @@ public class UI : MonoBehaviour {
 
     void LateUpdate()
     {
+        return;
         UI_viewRangeVegL1 = vr_l1.value;
         UI_viewRangeVegL2 = vr_l2.value;
         UI_viewRangeVegL3 = vr_l3.value;

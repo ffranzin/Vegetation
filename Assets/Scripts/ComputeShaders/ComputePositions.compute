@@ -75,20 +75,21 @@ int EvaluatePosition(float2 wPos)
 	float2 uv = WorldPosition2AtlasInfoUpperLevelUV(_qti[0], wPos);
 	float4 upperLevelInfo = _texture[uv];
 
+	if(upperLevelInfo.x > 0.8)	return 0;
 
 	int r = 1;//_qti[0].vegLevel * 3 - 1;
 	
 	if( _qti[0].vegLevel == 1)
 	{
-		r = CustomRand(wPos, 0, 2);
+		r = CustomRand(wPos, 0, 20);
 	}
 	else if( _qti[0].vegLevel == 2)
 	{
-		r = CustomRand(wPos, 2, 4);
+		r = CustomRand(wPos, 20, 40);
 	}
 	else if( _qti[0].vegLevel == 3)
 	{
-		r = CustomRand(wPos, 4, 6);
+		r = CustomRand(wPos, 40, 60);
 	}
 	
 
@@ -96,10 +97,11 @@ int EvaluatePosition(float2 wPos)
 
 	if(currentIndex > _globalMaxPositionBufferSize)	return 0;
 
+	//if(EvaluateCurves(wPos, uv, r) < 0.1)	return 0;
 
 	_globalTreeCountPositionsBuffer[r]++;
 	
-	_positionsTexture[float2(currentIndex, r)] = float2(wPos.x, wPos.y);// / _globalTerrainSize;
+	_positionsTexture[float2(currentIndex, r)] = float2(wPos.x, wPos.y);
 
 	SetSize(r);
 

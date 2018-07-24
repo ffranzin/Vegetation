@@ -47,19 +47,63 @@ public class TreePool : MonoBehaviour
     private void Awake()
     {
         treePool = new List<Tree>();
-
-        for (int i = 0; i < _treePool.Length; i++)
+        int id = 0;
+        for(int k = 0; k<10; k++)
         {
-            GameObject go = Instantiate(_treePool[i]);
+            for (int i = 0; i < 2; i++)
+            {
+                GameObject go = Instantiate(_treePool[i]);
 
-            Tree t = go.GetComponent<Tree>();
+                Tree t = go.GetComponent<Tree>();
 
-            if (t == null) Debug.LogError("Missing Component.");
+                if (t == null) Debug.LogError("Missing Component.");
 
-            t.myIndexInTreePool = i;
+                t.myIndexInTreePool = id;
 
-            treePool.Add(t);
+                treePool.Add(t);
+
+                id++;
+            }
         }
+
+        for (int k = 0; k < 10; k++)
+        {
+            for (int i = 2; i < 4; i++)
+            {
+                GameObject go = Instantiate(_treePool[i]);
+
+                Tree t = go.GetComponent<Tree>();
+
+                if (t == null) Debug.LogError("Missing Component.");
+
+                t.myIndexInTreePool = id;
+
+                treePool.Add(t);
+
+                id++;
+            }
+        }
+
+        for (int k = 0; k < 10; k++)
+        {
+            for (int i = 4; i < 6; i++)
+            {
+                GameObject go = Instantiate(_treePool[i]);
+
+                Tree t = go.GetComponent<Tree>();
+
+                if (t == null) Debug.LogError("Missing Component.");
+
+                t.myIndexInTreePool = id;
+
+                treePool.Add(t);
+
+                id++;
+            }
+        }
+
+
+
 
         treeCountPositionsBuffer = new ComputeBuffer(size, 4);
         

@@ -58,12 +58,12 @@ public class GlobalManager : MonoBehaviour
     
     public static void CreateAtlas()
     {
-        m_atlas = new Atlas(RenderTextureFormat.ARGBFloat, FilterMode.Bilinear, 8192, 128, true);
+        m_atlas = new Atlas(RenderTextureFormat.ARGBFloat, FilterMode.Bilinear, 16384, 128, true);
 
         if (m_atlas == null) Debug.LogError("Atlas cannot be generated.");
 
         GameObject tmpDebudAtlas = GameObject.Find("Plane");
-        //tmpDebudAtlas.GetComponent<MeshRenderer>().material.SetTexture("_MainTex", m_atlas.texture);
+        tmpDebudAtlas.GetComponent<MeshRenderer>().material.SetTexture("_MainTex", m_atlas.texture);
     }
     
 
