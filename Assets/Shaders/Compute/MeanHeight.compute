@@ -1,0 +1,47 @@
+﻿#pragma kernel FirstPass
+#pragma kernel SecondPass
+
+#include "MoistureUtils.cginc"
+
+[numthreads(GROUP_SIZE, GROUP_SIZE, 1)]
+void FirstPass(uint3 id : SV_DispatchThreadID)
+{
+	TexVPass[id.xy] = 0.0;
+	TexHPass[id.xy] = 0.0;
+	
+	for (int k = 0; k <= int(Params[0].d_meanHeight); k++)
+	{
+		TexVPass[id.xy] += (
+			TexHeight[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(0.0, -k))] +
+			TexHeight[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(0.0, k))]);
+
+		TexHPass[id.xy] += (
+			TexHeight[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(-k, 0.0))] +
+			TexHeight[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(k, 0.0))]);
+	}
+
+	TexVPass[id.xy] /= (Params[0].d_meanHeight * 2.0);
+	TexHPass[id.xy] /= (Params[0].d_meanHeight * 2.0);
+}
+
+[numthreads(GROUP_SIZE, GROUP_SIZE, 1)]
+void SecondPass(uint3 id : SV_DispatchThreadID)
+{
+	const int2 _zero = int2(0, 0);
+
+	TexMeanH[id.xy] = 0.0;
+
+	for (int k = 0; k <= int(Params[0].d_meanHeight); k++)
+	{
+		TexMeanH[id.xy] += (
+			TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(-k, 0.0))] +
+			TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(0.0, -k))]
+			);
+		TexMeanH[id.xy] += (
+			TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(k, 0.0))] +
+			TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(0.0, k))]
+			);
+	}
+
+	TexMeanH[id.xy] /= (Params[0].d_meanHeight * 4.0);
+}

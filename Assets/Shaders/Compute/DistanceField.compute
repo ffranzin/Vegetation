@@ -1,0 +1,71 @@
+﻿#pragma kernel FirstPass
+#pragma kernel SecondPass
+
+#include "MoistureUtils.cginc"
+
+[numthreads(GROUP_SIZE, GROUP_SIZE, 1)]
+void FirstPass(uint3 id : SV_DispatchThreadID)
+{
+	float dstV = Params[0].d_waterSpread;
+	float dstH = Params[0].d_waterSpread;
+
+	for (int k = 0; k <= int(Params[0].d_waterSpread); k++)
+	{
+		dstV = min(
+			min(k + dstV * (1.0 - TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(0.0, -k))]), dstV),
+			min(k + dstV * (1.0 - TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(0.0, k))]), dstV)
+		);
+
+		dstH = min(
+			min(k + dstH * (1.0 - TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(-k, 0.0))]), dstH),
+			min(k + dstH * (1.0 - TexWater[GetIndex(Pos, Params[0].s_atlas, id.xy, int2(k, 0.0))]), dstH)
+		);
+	}
+
+	TexVPass[id.xy] = saturate(dstV / Params[0].d_waterSpread);
+	TexHPass[id.xy] = saturate(dstH / Params[0].d_waterSpread);
+}
+
+[numthreads(GROUP_SIZE, GROUP_SIZE, 1)]
+void SecondPass(uint3 id : SV_DispatchThreadID)
+{
+	const int2 _zero = int2(0, 0);
+
+	float dst = 1.0;
+
+	for (int k = 0; k <= int(Params[0].d_waterSpread); k++)
+	{
+		//float d = k / dst;
+
+		//float dst1 = min(
+		//	length(float2(d, TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(-k, 0.0))])),
+		//	length(float2(d, TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(0.0, -k))]))
+		//);
+
+		//float dst2 = min(
+		//	length(float2(d, TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(-k, 0.0))])),
+		//	length(float2(d, TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(0.0, k))]))
+		//);
+
+		//float dst3 = min(
+		//	length(float2(d, TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(k, 0.0))])),
+		//	length(float2(d, TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(0.0, k))]))
+		//);
+
+		//float dst4 = min(
+		//	length(float2(d, TexVPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(k, 0.0))])),
+		//	length(float2(d, TexHPass[GetIndex(_zero, Params[0].s_splat, id.xy, int2(0.0, -k))]))
+		//);
+
+		////dst = min(dst, min(dst1, min(dst2, min(dst3, dst4))));
+
+		//dst = min(dst, min(
+		//	length(float2(d, TexVPass[id.xy])),
+		//	length(float2(d, TexHPass[id.xy]))
+		//));
+	}
+
+	TexWSpread[id.xy] = min(dst, min(TexHPass[id.xy], TexVPass[id.xy]));// dst / Params[0].d_waterSpread;
+
+	TexWSpread[id.xy] = dst;
+}
