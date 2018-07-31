@@ -301,7 +301,7 @@ public class TextureManager : MonoBehaviour
         float[] results = new float[size];
         for (int i = 0; i < results.Length; i++)
         {
-            int byteIndex = i * 4;
+            //int byteIndex = i * 4;
             byte[] localBytes = new byte[] { bytes[i], bytes[i + 1], bytes[i + 2], bytes[i + 3] }; // converts 4 bytes to a float
             results[i] = System.BitConverter.ToSingle(localBytes, 0);
             

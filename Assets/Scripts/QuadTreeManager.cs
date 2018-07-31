@@ -1,8 +1,10 @@
 ﻿
 
+using System.Runtime.InteropServices;
 using UnityEngine;
 using UnityEngine.Profiling;
 
+[StructLayout(LayoutKind.Sequential)]
 public struct QuadTreeInfo
 {
     public Vector2 currentNodeAtlasOrigin;
@@ -356,7 +358,7 @@ public class QuadTreeManager : MonoBehaviour
         }
         
         Camera.main.transform.position = Camera.main.transform.position + 
-                                    (TerrainManager.TERRAIN_END).normalized * 1000 * Time.deltaTime;
+                                    (TerrainManager.TERRAIN_END).normalized * 100 * Time.deltaTime;
 
         Camera.main.transform.LookAt(g.transform);
     }

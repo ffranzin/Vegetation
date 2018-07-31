@@ -151,14 +151,14 @@ public class MoistureDistribuition : MonoBehaviour
     #endregion
 
     #region PUBLIC METHODS
-    private void Start()
+    private void Awake()
     {
-        LoadDataFromFiles();
-        parameters.s_Atlas = TexManager.AtlasDimensions;
-        TexManager.InitTextures(parameters.s_Atlas, parameters.s_Splat);
-        InitComputes(parameters.s_Atlas, parameters.s_Splat);
+        //LoadDataFromFiles();
+        //parameters.s_Atlas = TexManager.AtlasDimensions;
+        //TexManager.InitTextures(parameters.s_Atlas, parameters.s_Splat);
+        //InitComputes(parameters.s_Atlas, parameters.s_Splat);
 
-        CalculateAll(Vector2Int.zero);
+        //CalculateAll(Vector2Int.zero);
     }
 
     private void Update()
