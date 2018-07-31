@@ -402,7 +402,7 @@ MonoBehaviour:
   parameters:
     d_MeanHeight: 32
     d_Slope: 12
-    d_WaterSpread: 64
+    d_WaterSpread: 32
     w_Height: 1
     w_RelativeHeight: 0.8
     w_Slope: 2
@@ -569,8 +569,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff8444a76c9923d4295f1d3899a706cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  heighmapPath: Assets/Resources/Maps/heightmap_smooth_Rfloat.tif
-  watermapPath: Assets/Resources/Maps/watermap_smooth_Rfloat.tif
+  heighmapPath: Assets/Resources/Maps/heightmap_Rfloat.tif
+  watermapPath: Assets/Resources/Maps/watermap_Rfloat.tif
   texFormat: 14
   filterMode: 1
   heightmapRawImg: {fileID: 677729331}
