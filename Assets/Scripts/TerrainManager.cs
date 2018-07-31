@@ -3,7 +3,7 @@
 
 public class TerrainManager : MonoBehaviour {
 
-    static int TERRAIN_SIZE = (int)Mathf.Pow(2f, 9f);
+    static int TERRAIN_SIZE = (int)Mathf.Pow(2f, 14f);
 
     public static readonly Vector3 TERRAIN_ORIGIN   = new Vector3(0, 0, 0);
     public static readonly Vector3 TERRAIN_END      = new Vector3(TERRAIN_SIZE, 0, TERRAIN_SIZE);
@@ -37,21 +37,20 @@ public class TerrainManager : MonoBehaviour {
         Shader.SetGlobalFloat("_globalPixelSize", (float)PIXEL_WIDTH);
         
         Shader.SetGlobalFloat("TERRAIN_HEIGHT_MULTIPLIER", TERRAIN_HEIGHT_MULTIPLIER);
-
-        moisture = GameObject.Find("Calculator").GetComponent<MoistureDistribuition>();
-
+        
         terrain.SetTexture("_waterMaptmp", waterMap); 
         
         Shader.SetGlobalTexture("_heightMapAux", m_heightMap);
 
-        tex = new Texture2D(1024, 1024, TextureFormat.RFloat, false);
+        //moisture = GameObject.Find("Calculator").GetComponent<MoistureDistribuition>();
+        //tex = new Texture2D(1024, 1024, TextureFormat.RFloat, false);
     }
 
     public Texture2D tex;
     public void Update()
     {
-        Graphics.CopyTexture(moisture.TexManager.m_heightMapTex, tex);
-        terrain.SetTexture("_debugMap", tex);
+       // Graphics.CopyTexture(moisture.TexManager.m_heightMapTex, tex);
+        //terrain.SetTexture("_debugMap", tex);
         //terrain.SetTexture("_slopeMapDebug", tex);
     }
 }

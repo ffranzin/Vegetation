@@ -48,75 +48,69 @@ public class TreePool : MonoBehaviour
         treePool = new List<Tree>();
         int id = 0;
 
-        for (int i = 0; i < _treePool.Length; i++)
+        //for (int i = 0; i < _treePool.Length; i++)
+        //{
+        //    GameObject go = Instantiate(_treePool[i]);
+
+        //    Tree t = go.GetComponent<Tree>();
+
+        //    if (t == null) Debug.LogError("Missing Component.");
+
+        //    t.myIndexInTreePool = id;
+
+        //    treePool.Add(t);
+
+        //    id++;
+        //}
+
+        int n = 10;
+        for (int k = 0; k < n; k++)
         {
-            GameObject go = Instantiate(_treePool[i]);
+                GameObject go = Instantiate(_treePool[0]);
 
-            Tree t = go.GetComponent<Tree>();
+                Tree t = go.GetComponent<Tree>();
 
-            if (t == null) Debug.LogError("Missing Component.");
+                if (t == null) Debug.LogError("Missing Component.");
 
-            t.myIndexInTreePool = id;
+                t.myIndexInTreePool = id;
 
-            treePool.Add(t);
+                treePool.Add(t);
 
-            id++;
+                id++;
+            
         }
 
+        for (int k = 0; k < n; k++)
+        {
+                GameObject go = Instantiate(_treePool[1]);
 
-        //for(int k = 0; k<10; k++)
-        //{
-        //    for (int i = 0; i < 2; i++)
-        //    {
-        //        GameObject go = Instantiate(_treePool[i]);
+                Tree t = go.GetComponent<Tree>();
 
-        //        Tree t = go.GetComponent<Tree>();
+                if (t == null) Debug.LogError("Missing Component.");
 
-        //        if (t == null) Debug.LogError("Missing Component.");
+                t.myIndexInTreePool = id;
 
-        //        t.myIndexInTreePool = id;
+                treePool.Add(t);
 
-        //        treePool.Add(t);
+                id++;
+            
+        }
 
-        //        id++;
-        //    }
-        //}
+        for (int k = 0; k < n; k++)
+        {
+                GameObject go = Instantiate(_treePool[2]);
 
-        //for (int k = 0; k < 10; k++)
-        //{
-        //    for (int i = 2; i < 4; i++)
-        //    {
-        //        GameObject go = Instantiate(_treePool[i]);
+                Tree t = go.GetComponent<Tree>();
 
-        //        Tree t = go.GetComponent<Tree>();
+                if (t == null) Debug.LogError("Missing Component.");
 
-        //        if (t == null) Debug.LogError("Missing Component.");
+                t.myIndexInTreePool = id;
 
-        //        t.myIndexInTreePool = id;
+                treePool.Add(t);
 
-        //        treePool.Add(t);
-
-        //        id++;
-        //    }
-        //}
-
-        //for (int k = 0; k < 10; k++)
-        //{
-        //    for (int i = 4; i < 6; i++)
-        //    {
-        //        GameObject go = Instantiate(_treePool[i]);
-
-        //        Tree t = go.GetComponent<Tree>();
-
-        //        if (t == null) Debug.LogError("Missing Component.");
-
-        //        t.myIndexInTreePool = id;
-
-        //        treePool.Add(t);
-
-        //        id++;
-        //    }
-        //}
+                id++;
+            
+        }
 
 
 
@@ -134,15 +128,13 @@ public class TreePool : MonoBehaviour
         CreatePositionTexture();
     }
     
-
     /// <summary>
     /// Get the amount of data generated in GPU and update all trees. 
     /// This amount are used to draw the meshes. 
     /// </summary>
-    public static void UpdateTreeAmountData()
+    public static void UpdateTreeAmountData(out int[] vegAmount)
     {
-        int[] vegAmount = new int[3];
-
+        vegAmount = new int[3];
         int count = 0;
         int level = 0;
 
@@ -218,10 +210,19 @@ public class TreePool : MonoBehaviour
 
         Shader.SetGlobalInt("_globalMaxPositionBufferSize", 16000);
 
-       /// GameObject g1 = GameObject.Find("Plane1");
+       // GameObject g1 = GameObject.Find("Plane2");
        // g1.GetComponent<MeshRenderer>().material.SetTexture("_MainTex", positionTexture);
     }
-    
+
+    private void OnDestroy()
+    {
+        globalTreeSlopeInfo.Release();
+        globalTreeHeightInfo.Release();
+        globalTreeHumidityInfo.Release();
+        globalTreeSensitiveInfo.Release();
+    }
+
+
 }
 
 

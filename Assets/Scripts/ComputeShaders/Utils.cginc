@@ -1,7 +1,7 @@
 
 #define INFINITY 9999999
 
-#define BLOCK_SIZE 900
+#define BLOCK_SIZE 100
 
 #include "StructuresTrees.cginc"
 
@@ -66,7 +66,7 @@ float CustomRandf(float2 seed)
 
 
 ///Get the information on atlas receiving one position from current atlas 
-float2 CurrentAtlasPos2UpperLevelAtlasUV(QuadTreeInfo _qti, float2 id)
+inline float2 CurrentAtlasPos2UpperLevelAtlasUV(QuadTreeInfo _qti, float2 id)
 {
 	//Get my real world position (RWP)
 	float2 uvCurrentPos		 = id / _qti.currentNodeAtlasSize;

@@ -1,10 +1,12 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Profiling;
 
-public class NodePool : MonoBehaviour {
+public class NodePool : MonoBehaviour
+{
 
-    public static readonly int NODE_POOL_SIZE = 8000;
-    public static readonly int MAX_BUFFER_RELEASED_PER_FRAME = 24;
+    public static readonly int NODE_POOL_SIZE = 5000;
+    public static readonly int MAX_BUFFER_RELEASED_PER_FRAME = 16;
 
     public static List<_QuadTree> qt_NodePool = new List<_QuadTree>();
     public static List<_QuadTree> qt_NodeToReleasePos = new List<_QuadTree>();
@@ -41,12 +43,18 @@ public class NodePool : MonoBehaviour {
     /// </summary>
     public static ComputeBuffer posIniSizeBuffer;
 
+    private void OnDestroy()
+    {
+        posIniSizeBuffer.Release();
+    }
+
     /// <summary>
     /// Used to getdata of 'posIniSizeBuffer'/
     /// </summary>
     static Vector2[] iniTam;
 
-    void Start () {
+    void Start()
+    {
 
         iniTam = new Vector2[TreePool.size];
 
@@ -88,10 +96,10 @@ public class NodePool : MonoBehaviour {
     public static void NodeRelease(_QuadTree qt)
     {
         if (qt == null) return;
-        
-        if(qt.parent != null)
+
+        if (qt.parent != null)
         {
-            for(int i = 0; i<4; i++)
+            for (int i = 0; i < 4; i++)
             {
                 if (qt.parent.children[i] == qt)
                 {
@@ -100,7 +108,7 @@ public class NodePool : MonoBehaviour {
                 }
             }
         }
-        
+
         if (qt.atlasPage != null)
         {
             GlobalManager.m_atlas.ReleasePage(qt.atlasPage);
@@ -111,16 +119,16 @@ public class NodePool : MonoBehaviour {
             qt_NodeToReleasePos.Add(qt);
         else
             qt_NodePool.Add(qt);
-        
+
         qt.containsVeg = false;
     }
 
-    
+
     public void Update()
     {
         if (qt_NodeToReleasePos.Count == 0) return;
-        
-        for (int i = 0; i<MAX_BUFFER_RELEASED_PER_FRAME && qt_NodeToReleasePos.Count > 0; i++)
+
+        for (int i = 0; i < MAX_BUFFER_RELEASED_PER_FRAME && qt_NodeToReleasePos.Count > 0; i++)
         {
             ReleaseBuffers(qt_NodeToReleasePos[0]);
 
@@ -146,7 +154,7 @@ public class NodePool : MonoBehaviour {
             int ini = (int)iniTam[i].x;
             int tam = (int)iniTam[i].y;
 
-            if (tam > 0)    MoveBlock(ini, tam, i);
+            if (tam > 0) MoveBlock(ini, tam, i);
         }
 
         Graphics.CopyTexture(TreePool.positionTextureTmp, TreePool.positionTexture);
@@ -167,12 +175,11 @@ public class NodePool : MonoBehaviour {
         int srcX = ini + tam;
         int srcY = h;
         int srcWidth = TreePool.positionTexture.width - srcX;
-        
+
         int dstX = ini;
-        
-        Graphics.CopyTexture(TreePool.positionTexture,     0, 0, srcX, h, srcWidth, 1,
-                             TreePool.positionTextureTmp,  0, 0, dstX, h);
+
+        Graphics.CopyTexture(TreePool.positionTexture, 0, 0, srcX, h, srcWidth, 1,
+                             TreePool.positionTextureTmp, 0, 0, dstX, h);
+
     }
-
-
 }

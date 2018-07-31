@@ -83,8 +83,8 @@ Shader "Custom/MyCustomTerrain" {
 
 			color = lerp(ground, grass, splat.r);
 			
-			if(splatMontain.r > 0.1)
-				color = lerp(color, stone, 2 * splatMontain.r);
+			//if(splatMontain.r > 0.1)
+			//	color = lerp(color, stone, 2 * splatMontain.r);
 
 			float4 water = tex2D(_WaterMap, uv);
 			if(water.r > 0.1)	color = float4(0,0,1,1);

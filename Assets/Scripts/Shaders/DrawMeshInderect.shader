@@ -17,6 +17,7 @@
 
         float4 _Color;
 		int _myIndexInTreePool;
+		int vegLevel;
 		float TERRAIN_HEIGHT_MULTIPLIER;
 
 		sampler2D _HeightMap;
@@ -42,12 +43,12 @@
 
 				half2 data = _positionsTexture.Load(posUV).rg;
 
-				float2 uv = data.xy / 512;
+				float2 uv = data.xy / 1024;
 
 				float h = tex2Dlod(_HeightMap, float4(uv.x, uv.y, 0, 0)).x * TERRAIN_HEIGHT_MULTIPLIER;
-				
-				//h = 1;
-				float scale = 1;
+				h = h * 3;
+				h = 1;
+				float scale = 4 - vegLevel;
 
 				unity_ObjectToWorld._11_21_31_41 = float4(scale, 0, 0, 0);
 				unity_ObjectToWorld._12_22_32_42 = float4(0, scale, 0, 0);

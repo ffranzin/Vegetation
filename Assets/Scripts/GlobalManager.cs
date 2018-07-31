@@ -6,14 +6,13 @@ public class GlobalManager : MonoBehaviour
 {
     public static Atlas m_atlas;
     
-    public static float VEG_MIN_DIST_L1 = 10;
-    public static float VEG_MIN_DIST_L2 = 5;
-    public static float VEG_MIN_DIST_L3 = 2;
-
-    public static int lowerestQuadTreeBlockSize = 128;
+    public static float VEG_MIN_DIST_L1 = 20;
+    public static float VEG_MIN_DIST_L2 = 10;
+    public static float VEG_MIN_DIST_L3 = 5;
+    public static int lowerestQuadTreeBlockSize = 256;
     
-    public static float VIEW_RADIUS_VEG_L1 = 2000;
-    public static float VIEW_RADIUS_VEG_L2 = 1000;
+    public static float VIEW_RADIUS_VEG_L1 = 5000;
+    public static float VIEW_RADIUS_VEG_L2 = 3000;
     public static float VIEW_RADIUS_VEG_L3 = 500;
      
 
@@ -22,6 +21,15 @@ public class GlobalManager : MonoBehaviour
     public static ComputeBuffer globalPrecomputedTileBufferL1;
     public static ComputeBuffer globalPrecomputedTileBufferL2;
     public static ComputeBuffer globalPrecomputedTileBufferL3;
+
+
+    private void OnDestroy()
+    {
+        globalPrecomputedTileBufferL1.Release();
+        globalPrecomputedTileBufferL2.Release();
+        globalPrecomputedTileBufferL3.Release();
+        positionsBuffer.Release();
+    }
 
     /// <summary>
     /// Precompute tiles of positions. 
@@ -57,11 +65,11 @@ public class GlobalManager : MonoBehaviour
     
     public static void CreateAtlas()
     {
-        m_atlas = new Atlas(RenderTextureFormat.ARGBFloat, FilterMode.Bilinear, 4096, 128, true);
+        m_atlas = new Atlas(RenderTextureFormat.ARGBFloat, FilterMode.Bilinear, 8192, 128, true);
 
         if (m_atlas == null) Debug.LogError("Atlas cannot be generated.");
 
-        GameObject tmpDebudAtlas = GameObject.Find("Plane");
+        //GameObject tmpDebudAtlas = GameObject.Find("Plane");
         //tmpDebudAtlas.GetComponent<MeshRenderer>().material.SetTexture("_MainTex", m_atlas.texture);
     }
     
@@ -70,7 +78,7 @@ public class GlobalManager : MonoBehaviour
     {
         CreateAtlas();
 
-        positionsBuffer = new ComputeBuffer(1000, 8);
+        positionsBuffer = new ComputeBuffer(10000, 8);
     
         FillAllPrecomputedPositinsBuffer();
     }
@@ -85,6 +93,9 @@ public class GlobalManager : MonoBehaviour
         VIEW_RADIUS_VEG_L2 = Mathf.Lerp(300, UI.UI_viewRangeVegL2, camHeight);
         VIEW_RADIUS_VEG_L3 = Mathf.Lerp(100, UI.UI_viewRangeVegL3, camHeight);
 
-        VIEW_RADIUS_VEG_L1 = VIEW_RADIUS_VEG_L2 = VIEW_RADIUS_VEG_L3 = 3000;
+
+        VIEW_RADIUS_VEG_L1 = 4000;
+        VIEW_RADIUS_VEG_L2 = 2000;
+        VIEW_RADIUS_VEG_L3 = 1000;
     }
 }

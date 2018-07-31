@@ -53,6 +53,11 @@ public class FlyCamera : MonoBehaviour
             Camera.main.transform.position = new Vector3(-34, 184, -87);
             Camera.main.transform.rotation = Quaternion.Euler(new Vector3(35, -316, 0));
         }
+        if (Input.GetKeyDown(KeyCode.Alpha2))
+        {
+            Camera.main.transform.position = new Vector3(-232, 367, -256);
+            Camera.main.transform.rotation = Quaternion.Euler(new Vector3(26, -314, 0));
+        }
 
         ProcessMouse();
 

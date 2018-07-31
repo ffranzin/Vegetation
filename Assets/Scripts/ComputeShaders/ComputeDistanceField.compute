@@ -8,7 +8,9 @@
 RWTexture2D <float4> _texture;
 RWStructuredBuffer<float2> _positionsBuffer;
 RWStructuredBuffer<QuadTreeInfo> _qti;
+RWStructuredBuffer<float> _Released;
 
+RWStructuredBuffer<float> _locked;
 
  float2 tmpPositionColor(float2 id)
 {
@@ -49,10 +51,10 @@ void FillTexture(float2 atlasCenter, float radius, int l)
 
 
 
-[numthreads(16,1,1)]
+[numthreads(128,1,1)]
 void ComputeSplat (uint3 id : SV_DispatchThreadID)
 {
-	int NUM_THREAD = 16;
+	int NUM_THREAD = 128;
 
 	int init = id.x * (BLOCK_SIZE / NUM_THREAD);
 	int size = init + (BLOCK_SIZE / NUM_THREAD);
@@ -68,6 +70,7 @@ void ComputeSplat (uint3 id : SV_DispatchThreadID)
 
 		FillTexture(p, radius, _qti[0].vegLevel);
 	}
+	_locked[0] = 2;
 }
 
 
@@ -76,8 +79,19 @@ void ComputeSplat (uint3 id : SV_DispatchThreadID)
 [numthreads(16,16,1)]
 void TransferDF (uint3 id : SV_DispatchThreadID)
 {
-	float2 uv = CurrentAtlasPos2UpperLevelAtlasUV(_qti[0], id.xy).xy;
-	_texture[id.xy + _qti[0].currentNodeAtlasOrigin.xy] += _texture[uv];
+	float2 uvCurrentPos = id / _qti[0].currentNodeAtlasSize;
+	float2 uvCurrentWorldPos = _qti[0].currentNodeWorldOrigin + uvCurrentPos * _qti[0].currentNodeWorldSize;
+	
+	//Get the correspondent uv of RWP in upper level node 
+	float2 uvInUpperLevel = (uvCurrentWorldPos - _qti[0].upperNodeWorldOrigin) / _qti[0].upperNodeWorldSize;
+
+	//pixel position of RWP in upper level
+	uvInUpperLevel = _qti[0].upperNodeAtlasOrigin + uvInUpperLevel * _qti[0].upperNodeAtlasSize;
+
+
+	//float2 uv = CurrentAtlasPos2UpperLevelAtlasUV(_qti[0], id.xy).xy;
+	_texture[id.xy + _qti[0].currentNodeAtlasOrigin.xy] += _texture[uvInUpperLevel];
+
 }
 
 
@@ -87,3 +101,4 @@ void Clear (uint3 id : SV_DispatchThreadID)
 {
 	_texture[id.xy + _qti[0].currentNodeAtlasOrigin] = float4(0,0,0,0);
 }
+

@@ -36,21 +36,24 @@ public class UI : MonoBehaviour {
     static Text viewrangeTextL2;
     static Text viewrangeTextL3;
 
+    static int avgl1;
+    static int avgl2;
+    static int avgl3;
+
+
 
     public static void UpdateAmount(int[] amount)
     {
         return;
-
-        amountVegL1.text = "INSTANCES VEGETATION L1 : " + amount[0]; 
-        amountVegL2.text = "INSTANCES VEGETATION L2 : " + amount[1]; 
-        amountVegL3.text = "INSTANCES VEGETATION L3 : " + amount[2]; 
+        amountVegL1.text = "INSTANCES VEGETATION L1 : " + avgl1; 
+        amountVegL2.text = "INSTANCES VEGETATION L2 : " + avgl2; 
+        amountVegL3.text = "INSTANCES VEGETATION L3 : " + avgl3; 
     }
 
     public Vector3 lastCamPos;
     public float lastDeltaTime;
     
     private void Start()
-
     {
         return;
         vr_l1 = GameObject.Find("SliderViewRangeL1").GetComponent<Slider>();

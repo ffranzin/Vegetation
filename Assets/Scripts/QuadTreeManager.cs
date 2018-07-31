@@ -1,6 +1,7 @@
 ﻿
-using UnityEngine;
 
+using UnityEngine;
+using UnityEngine.Profiling;
 
 public struct QuadTreeInfo
 {
@@ -36,6 +37,7 @@ public class _QuadTree
 
     public int myIdInNodePool;
 
+    public QuadTreeInfo qtInfo = new QuadTreeInfo();
 
     public bool hasChild
     {
@@ -50,17 +52,12 @@ public class _QuadTree
     }
 
 
-
-
-
     /// <summary>
     /// Create an struct used in computeshader.
     /// Has the same struct in StructuresTrees.cginc
     /// </summary>
     public QuadTreeInfo QuadTreeInfo(int vegLevel, float radius)
     {
-        QuadTreeInfo qtInfo = new QuadTreeInfo();
-
         qtInfo.currentNodeAtlasOrigin = new Vector2(atlasPage.tl.x, atlasPage.tl.y);
         qtInfo.currentNodeAtlasSize = atlasPage.size;
         qtInfo.currentNodeWorldOrigin = bound.min.xz();
@@ -94,7 +91,7 @@ public class QuadTreeManager : MonoBehaviour
     static int QUADTREE_VEG_LEVEL_1;
     static int QUADTREE_VEG_LEVEL_2;
     static int QUADTREE_VEG_LEVEL_3;
-    
+
     static int QUADTREE_MAX_GEN_POS_NODES_PER_FRAME = 64;
 
     static int QUADTREE_GEN_POS_NODE = 0;
@@ -112,7 +109,7 @@ public class QuadTreeManager : MonoBehaviour
         QUADTREE_VEG_LEVEL_1 = QUADTREE_MAX_LEVEL - 2;
         QUADTREE_VEG_LEVEL_2 = QUADTREE_MAX_LEVEL - 1;
         QUADTREE_VEG_LEVEL_3 = QUADTREE_MAX_LEVEL;
-        
+
     }
 
 
@@ -213,7 +210,7 @@ public class QuadTreeManager : MonoBehaviour
             qt.children[i].containsVeg = false;
             GenBoundChild(qt.bound, ref qt.children[i].bound, i);
         }
-        
+
         for (int i = 0; subdivideAll && i < qt.children.Length; i++)
             SubdivideQuadTree(qt.children[i], subdivideAll);
     }
@@ -237,7 +234,7 @@ public class QuadTreeManager : MonoBehaviour
             DispatcherComputePositions.ComputePositions(qt, GlobalManager.VEG_MIN_DIST_L1 / 2, 1);
             hasDispath = true;
         }
-        else if (qt.level == QUADTREE_VEG_LEVEL_2) 
+        else if (qt.level == QUADTREE_VEG_LEVEL_2)
         {
             qt.atlasPage = GlobalManager.m_atlas.GetPage();
             DispatcherComputePositions.ComputePositions(qt, GlobalManager.VEG_MIN_DIST_L2 / 2, 2);
@@ -254,11 +251,12 @@ public class QuadTreeManager : MonoBehaviour
         {
             qt.containsVeg = true;
             QUADTREE_GEN_POS_NODE++;
+            generated++;
         }
 
         qt.positionsHasBeenGenerated = true;
     }
-    
+
 
     /// <summary>
     /// Release all nodes that arent visible.
@@ -299,39 +297,101 @@ public class QuadTreeManager : MonoBehaviour
             VerifyNewNodes(qt.children[i]);
     }
 
-    public Vector2 seed;
 
+
+
+
+    static int avgl1, avgl2, avgl3;
+    static int generated;
+    static GameObject g;
+    float timeCounteravg = 0;
+    bool block = false;
     private void Update()
     {
+        if (block) return;
+        
         if (m_quadTree == null) return;
 
         QUADTREE_GEN_POS_NODE = 0;
 
         frustumPlanes = GeometryUtility.CalculateFrustumPlanes(Camera.main);
 
+        System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+        sw.Start();
+
         VerifyNewNodes(m_quadTree);
+        
+        sw.Stop();
 
+        if (sw.Elapsed.Milliseconds > 0 && generated > 0)
+        {
+            timeCounteravg = ((timeCounteravg + (sw.Elapsed.Milliseconds / generated))/2);
+            Debug.Log(sw.Elapsed.Milliseconds / generated);
+        }
+        generated = 0;
+
+        if ((Camera.main.transform.position.x0z() - TerrainManager.TERRAIN_END).magnitude < GlobalManager.VIEW_RADIUS_VEG_L1)
+        {
+            Debug.Log("veg L1 " + avgl1);
+            Debug.Log("veg L2 " + avgl2);
+            Debug.Log("veg L3 " + avgl3);
+            Debug.Log("TIMER " + timeCounteravg);
+            block = true;
+        }
+        
+        
         ClearAll();
-
-        TreePool.UpdateTreeAmountData();
+        UpdateTreesQuantity();
+        MoveCam();
     }
 
 
-    int lastFrame = 0;
+
+    static void MoveCam()
+    {
+        if (g == null)
+        {
+            g = new GameObject();
+            g.transform.position = TerrainManager.TERRAIN_END;
+        }
+        
+        Camera.main.transform.position = Camera.main.transform.position + 
+                                    (TerrainManager.TERRAIN_END).normalized * 1000 * Time.deltaTime;
+
+        Camera.main.transform.LookAt(g.transform);
+    }
+
+
+
+    static void UpdateTreesQuantity()
+    {
+        if (Time.frameCount % 30 != 0) return;
+
+        int[] pos;
+
+        TreePool.UpdateTreeAmountData(out pos);
+
+        if (pos[0] > 0 && pos[1] > 0 && pos[2] > 0)
+        {
+            avgl1 = (avgl1 + pos[0]) / 2;
+            avgl2 = (avgl2 + pos[1]) / 2;
+            avgl3 = (avgl3 + pos[2]) / 2;
+        }
+    }
+
+
+
+
     /// <summary>
     /// Release nodes non visible.
     /// </summary>
     public void ClearAll()
     {
-        int currentFrameCount = Time.frameCount;
-
-        if (currentFrameCount - lastFrame < 20) return;
-
-        lastFrame = currentFrameCount;
-
+        if (Time.frameCount % 60 != 0) return;
+        
         ClearNodes(m_quadTree);
 
-        //Debug.Log("FREE NODES " + NodePool.freeNodes);
+       // Debug.Log("FREE NODES " + NodePool.freeNodes);
     }
 
 
