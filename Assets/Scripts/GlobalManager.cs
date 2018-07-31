@@ -1,6 +1,5 @@
 ﻿
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using UnityEngine;
 
 public class GlobalManager : MonoBehaviour
@@ -58,12 +57,12 @@ public class GlobalManager : MonoBehaviour
     
     public static void CreateAtlas()
     {
-        m_atlas = new Atlas(RenderTextureFormat.ARGBFloat, FilterMode.Bilinear, 16384, 128, true);
+        m_atlas = new Atlas(RenderTextureFormat.ARGBFloat, FilterMode.Bilinear, 4096, 128, true);
 
         if (m_atlas == null) Debug.LogError("Atlas cannot be generated.");
 
         GameObject tmpDebudAtlas = GameObject.Find("Plane");
-        tmpDebudAtlas.GetComponent<MeshRenderer>().material.SetTexture("_MainTex", m_atlas.texture);
+        //tmpDebudAtlas.GetComponent<MeshRenderer>().material.SetTexture("_MainTex", m_atlas.texture);
     }
     
 
@@ -85,6 +84,7 @@ public class GlobalManager : MonoBehaviour
         VIEW_RADIUS_VEG_L1 = Mathf.Lerp(500, UI.UI_viewRangeVegL1, camHeight);
         VIEW_RADIUS_VEG_L2 = Mathf.Lerp(300, UI.UI_viewRangeVegL2, camHeight);
         VIEW_RADIUS_VEG_L3 = Mathf.Lerp(100, UI.UI_viewRangeVegL3, camHeight);
-        
+
+        VIEW_RADIUS_VEG_L1 = VIEW_RADIUS_VEG_L2 = VIEW_RADIUS_VEG_L3 = 3000;
     }
 }

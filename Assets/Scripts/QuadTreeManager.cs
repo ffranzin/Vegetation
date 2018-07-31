@@ -237,13 +237,13 @@ public class QuadTreeManager : MonoBehaviour
             DispatcherComputePositions.ComputePositions(qt, GlobalManager.VEG_MIN_DIST_L1 / 2, 1);
             hasDispath = true;
         }
-        else if (qt.level == QUADTREE_VEG_LEVEL_2)
+        else if (qt.level == QUADTREE_VEG_LEVEL_2) 
         {
             qt.atlasPage = GlobalManager.m_atlas.GetPage();
             DispatcherComputePositions.ComputePositions(qt, GlobalManager.VEG_MIN_DIST_L2 / 2, 2);
             hasDispath = true;
         }
-        else if (qt.level == QUADTREE_VEG_LEVEL_3 && false)
+        else if (qt.level == QUADTREE_VEG_LEVEL_3)
         {
             qt.atlasPage = GlobalManager.m_atlas.GetPage();
             DispatcherComputePositions.ComputePositions(qt, GlobalManager.VEG_MIN_DIST_L3 / 2, 3);
@@ -298,8 +298,8 @@ public class QuadTreeManager : MonoBehaviour
         for (int i = 0; i < qt.children.Length; i++)
             VerifyNewNodes(qt.children[i]);
     }
-    
-    
+
+    public Vector2 seed;
 
     private void Update()
     {

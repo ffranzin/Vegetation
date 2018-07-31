@@ -163,6 +163,7 @@ public class MoistureDistribuition : MonoBehaviour
 
     private void Update()
     {
+        return;
         if (Input.GetKeyUp(KeyCode.Space))
         {
             Debug.Log("Update");
@@ -173,20 +174,22 @@ public class MoistureDistribuition : MonoBehaviour
         }
     }
 
+    
+
     public void CalculateAll(Vector2Int position)
     {
         // Calculate All
-        Profiler.BeginSample("Calculate All GPU");
+        //Profiler.BeginSample("Calculate All GPU");
 
         UpdatePosition(position);
-
+        
         CalculateMeanHeight();
         CalculateRelativeHeight();
         CalculateSlope();
         CalculateWaterSpread();
         CalculateMoisture();
 
-        Profiler.EndSample();
+        // Profiler.EndSample();
     }
 
     /// <summary>
@@ -239,12 +242,12 @@ public class MoistureDistribuition : MonoBehaviour
     /// </summary>
     public void CalculateMeanHeight()
     {
-        Profiler.BeginSample("Mean Height Calculation GPU");
+        //Profiler.BeginSample("Mean Height Calculation GPU");
 
         meanHeightCompute.Dispatch(meanHFirstKernel, GroupSizeX, GroupSizeY, 1);
         meanHeightCompute.Dispatch(meanHSecondKernel, GroupSizeX, GroupSizeY, 1);
 
-        Profiler.EndSample();
+        //Profiler.EndSample();
     }
 
     /// <summary>
@@ -252,11 +255,11 @@ public class MoistureDistribuition : MonoBehaviour
     /// </summary>
     public void CalculateRelativeHeight()
     {
-        Profiler.BeginSample("Relative Height Calculation GPU");
+        //Profiler.BeginSample("Relative Height Calculation GPU");
 
         relativeHeightCompute.Dispatch(relativeHKernel, GroupSizeX, GroupSizeY, 1);
 
-        Profiler.EndSample();
+        //Profiler.EndSample();
     }
 
     /// <summary>
@@ -264,11 +267,11 @@ public class MoistureDistribuition : MonoBehaviour
     /// </summary>
     public void CalculateSlope()
     {
-        Profiler.BeginSample("Slope Calculation GPU");
+       // Profiler.BeginSample("Slope Calculation GPU");
 
         slopeCompute.Dispatch(slopeKernel, GroupSizeX, GroupSizeY, 1);
 
-        Profiler.EndSample();
+       // Profiler.EndSample();
     }
 
     /// <summary>
@@ -276,12 +279,12 @@ public class MoistureDistribuition : MonoBehaviour
     /// </summary>
     public void CalculateWaterSpread()
     {
-        Profiler.BeginSample("Water Spread Calculation GPU");
+       // Profiler.BeginSample("Water Spread Calculation GPU");
 
         waterSpreadCompute.Dispatch(wSpreadFirstKernel, GroupSizeX, GroupSizeY, 1);
         waterSpreadCompute.Dispatch(wSpreadSecondKernel, GroupSizeX, GroupSizeY, 1);
 
-        Profiler.EndSample();
+       // Profiler.EndSample();
     }
 
     /// <summary>
@@ -289,11 +292,11 @@ public class MoistureDistribuition : MonoBehaviour
     /// </summary>
     public void CalculateMoisture()
     {
-        Profiler.BeginSample("Moisture Calculation GPU");
+        //Profiler.BeginSample("Moisture Calculation GPU");
 
         moistureCompute.Dispatch(moistureKernel, GroupSizeX, GroupSizeY, 1);
 
-        Profiler.EndSample();
+        //Profiler.EndSample();
     }
 
     public void UpdateParameters()
@@ -962,4 +965,4 @@ public class MoistureDistribuition : MonoBehaviour
     }
 }
 */
-#endregion
+#endregion 

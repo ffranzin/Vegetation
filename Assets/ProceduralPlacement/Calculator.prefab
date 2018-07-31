@@ -1,0 +1,222 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &100100000
+Prefab:
+  m_ObjectHideFlags: 1
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 0}
+    m_Modifications: []
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 0}
+  m_RootGameObject: {fileID: 1010234421296282}
+  m_IsPrefabAsset: 1
+--- !u!1 &1010234421296282
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4108504922250076}
+  - component: {fileID: 114810110945807412}
+  - component: {fileID: 114307720494198736}
+  m_Layer: 0
+  m_Name: Calculator
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4108504922250076
+Transform:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1010234421296282}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 0
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &114307720494198736
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1010234421296282}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ff8444a76c9923d4295f1d3899a706cb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  heighmapPath: Assets/Resources/Maps/heightmap_Rfloat.tif
+  watermapPath: Assets/Resources/Maps/watermap_Rfloat.tif
+  texFormat: 14
+  filterMode: 1
+  heightmapRawImg: {fileID: 0}
+  meanHeightRawImg: {fileID: 0}
+  relativeHeightRawImg: {fileID: 0}
+  slopeRawImg: {fileID: 0}
+  watermapRawImg: {fileID: 0}
+  waterSpreadRawImg: {fileID: 0}
+  moistureRawImg: {fileID: 0}
+--- !u!114 &114810110945807412
+MonoBehaviour:
+  m_ObjectHideFlags: 1
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 100100000}
+  m_GameObject: {fileID: 1010234421296282}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2576d6a028348d74daaf053238f0560d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  parameters:
+    d_MeanHeight: 32
+    d_Slope: 12
+    d_WaterSpread: 64
+    w_Height: 1
+    w_RelativeHeight: 0.8
+    w_Slope: 2
+    w_WaterSpread: 1.5
+    s_Atlas: {x: 0, y: 0}
+    s_Splat: {x: 1024, y: 1024}
+  curves:
+    heightInfluence:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0.8
+        inSlope: -2.8571434
+        outSlope: -2.8571434
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0.10937501
+      - serializedVersion: 3
+        time: 0.11203423
+        value: 0.21808745
+        inSlope: -1.13599
+        outSlope: -1.13599
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.19267237
+      - serializedVersion: 3
+        time: 0.8
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.2166666
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    relativeHeightInfluence:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0.33333334
+      - serializedVersion: 3
+        time: 1
+        value: -1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    slopeInfluence:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 1
+        outSlope: 1
+        tangentMode: 34
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 1
+        outSlope: 1
+        tangentMode: 34
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    waterHInfluence:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 34
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 34
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+    waterVInfluence:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 1
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  meanHeightCompute: {fileID: 7200000, guid: a11115ab5c0ebd744b1e0a210496d161, type: 3}
+  relativeHeightCompute: {fileID: 7200000, guid: 421654250657e7842bfdd1cbc0179e06,
+    type: 3}
+  slopeCompute: {fileID: 7200000, guid: d1d3e1ffeec1b7f4f80566589a781ec0, type: 3}
+  waterSpreadCompute: {fileID: 7200000, guid: 8f54478a7c1d38a499f3637e2a9c107a, type: 3}
+  moistureCompute: {fileID: 7200000, guid: 81683fb1c91f1ca4ea5526a4e983a288, type: 3}

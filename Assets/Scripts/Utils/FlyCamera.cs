@@ -38,8 +38,8 @@ public class FlyCamera : MonoBehaviour
 	{
 		Vector3 lastPosition = transform.position;
 
-        if (transform.position.y < 1)
-            transform.position = transform.position + Vector3.up * 30;
+       // if (transform.position.y < 1)
+        //    transform.position = transform.position + Vector3.up * 30;
 
 		if (Input.GetKey(KeyCode.X))
 			MatchSurfaceNormal(1f);
@@ -48,12 +48,19 @@ public class FlyCamera : MonoBehaviour
             Camera.main.transform.position = iniPos.position;
             Camera.main.transform.rotation = iniPos.rotation;
         }
+        if (Input.GetKeyDown(KeyCode.Alpha1))
+        {
+            Camera.main.transform.position = new Vector3(-34, 184, -87);
+            Camera.main.transform.rotation = Quaternion.Euler(new Vector3(35, -316, 0));
+        }
 
         ProcessMouse();
 
 		float distance = (transform.position - lastPosition).magnitude;
 		velocity = distance / Time.deltaTime;
 		velocity *= 3.6f;
+
+        
 	}
 
 	void ProcessJoystick()

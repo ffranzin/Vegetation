@@ -40,6 +40,7 @@ public class UI : MonoBehaviour {
     public static void UpdateAmount(int[] amount)
     {
         return;
+
         amountVegL1.text = "INSTANCES VEGETATION L1 : " + amount[0]; 
         amountVegL2.text = "INSTANCES VEGETATION L2 : " + amount[1]; 
         amountVegL3.text = "INSTANCES VEGETATION L3 : " + amount[2]; 
@@ -49,6 +50,7 @@ public class UI : MonoBehaviour {
     public float lastDeltaTime;
     
     private void Start()
+
     {
         return;
         vr_l1 = GameObject.Find("SliderViewRangeL1").GetComponent<Slider>();

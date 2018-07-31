@@ -33,7 +33,6 @@ public class TreePool : MonoBehaviour
     public static ComputeBuffer globalTreeSlopeInfo;
     public static ComputeBuffer globalTreeHeightInfo;
     public static ComputeBuffer globalTreeSensitiveInfo;
-    public static ComputeBuffer globalTreeNecessityInfo;
 
 
     public static int size
@@ -48,59 +47,76 @@ public class TreePool : MonoBehaviour
     {
         treePool = new List<Tree>();
         int id = 0;
-        for(int k = 0; k<10; k++)
+
+        for (int i = 0; i < _treePool.Length; i++)
         {
-            for (int i = 0; i < 2; i++)
-            {
-                GameObject go = Instantiate(_treePool[i]);
+            GameObject go = Instantiate(_treePool[i]);
 
-                Tree t = go.GetComponent<Tree>();
+            Tree t = go.GetComponent<Tree>();
 
-                if (t == null) Debug.LogError("Missing Component.");
+            if (t == null) Debug.LogError("Missing Component.");
 
-                t.myIndexInTreePool = id;
+            t.myIndexInTreePool = id;
 
-                treePool.Add(t);
+            treePool.Add(t);
 
-                id++;
-            }
+            id++;
         }
 
-        for (int k = 0; k < 10; k++)
-        {
-            for (int i = 2; i < 4; i++)
-            {
-                GameObject go = Instantiate(_treePool[i]);
 
-                Tree t = go.GetComponent<Tree>();
+        //for(int k = 0; k<10; k++)
+        //{
+        //    for (int i = 0; i < 2; i++)
+        //    {
+        //        GameObject go = Instantiate(_treePool[i]);
 
-                if (t == null) Debug.LogError("Missing Component.");
+        //        Tree t = go.GetComponent<Tree>();
 
-                t.myIndexInTreePool = id;
+        //        if (t == null) Debug.LogError("Missing Component.");
 
-                treePool.Add(t);
+        //        t.myIndexInTreePool = id;
 
-                id++;
-            }
-        }
+        //        treePool.Add(t);
 
-        for (int k = 0; k < 10; k++)
-        {
-            for (int i = 4; i < 6; i++)
-            {
-                GameObject go = Instantiate(_treePool[i]);
+        //        id++;
+        //    }
+        //}
 
-                Tree t = go.GetComponent<Tree>();
+        //for (int k = 0; k < 10; k++)
+        //{
+        //    for (int i = 2; i < 4; i++)
+        //    {
+        //        GameObject go = Instantiate(_treePool[i]);
 
-                if (t == null) Debug.LogError("Missing Component.");
+        //        Tree t = go.GetComponent<Tree>();
 
-                t.myIndexInTreePool = id;
+        //        if (t == null) Debug.LogError("Missing Component.");
 
-                treePool.Add(t);
+        //        t.myIndexInTreePool = id;
 
-                id++;
-            }
-        }
+        //        treePool.Add(t);
+
+        //        id++;
+        //    }
+        //}
+
+        //for (int k = 0; k < 10; k++)
+        //{
+        //    for (int i = 4; i < 6; i++)
+        //    {
+        //        GameObject go = Instantiate(_treePool[i]);
+
+        //        Tree t = go.GetComponent<Tree>();
+
+        //        if (t == null) Debug.LogError("Missing Component.");
+
+        //        t.myIndexInTreePool = id;
+
+        //        treePool.Add(t);
+
+        //        id++;
+        //    }
+        //}
 
 
 
@@ -153,7 +169,6 @@ public class TreePool : MonoBehaviour
         List<float> heightInfo = new List<float>();
         List<float> humidityInfo = new List<float>();
         List<float> sensitiveInfo = new List<float>();
-        List<float> necessityInfo = new List<float>();
 
         for (int i = 0; i < size; i++)
         {
@@ -163,32 +178,29 @@ public class TreePool : MonoBehaviour
             heightInfo.AddRange(t.TreeHeightDiscretized);
             humidityInfo.AddRange(t.TreeHumidityDiscretized);
             sensitiveInfo.AddRange(t.TreeSensitiveDiscretized);
-            necessityInfo.AddRange(t.TreeNecessityDiscretized);
         }
 
-        globalTreeHumidityInfo = new ComputeBuffer(size, sizeof(float) * Tree.N_INFO_DISCRETIZED);
-        globalTreeSlopeInfo = new ComputeBuffer(size, sizeof(float) * Tree.N_INFO_DISCRETIZED);
-        globalTreeHeightInfo = new ComputeBuffer(size, sizeof(float) * Tree.N_INFO_DISCRETIZED);
+        globalTreeHumidityInfo  = new ComputeBuffer(size, sizeof(float) * Tree.N_INFO_DISCRETIZED);
+        globalTreeSlopeInfo     = new ComputeBuffer(size, sizeof(float) * Tree.N_INFO_DISCRETIZED);
+        globalTreeHeightInfo    = new ComputeBuffer(size, sizeof(float) * Tree.N_INFO_DISCRETIZED);
         globalTreeSensitiveInfo = new ComputeBuffer(size, sizeof(float) * Tree.N_INFO_DISCRETIZED);
-        globalTreeNecessityInfo = new ComputeBuffer(size, sizeof(float) * Tree.N_INFO_DISCRETIZED);
 
         globalTreeSlopeInfo.SetData(slopeInfo);
         globalTreeHeightInfo.SetData(heightInfo);
         globalTreeHumidityInfo.SetData(humidityInfo);
         globalTreeSensitiveInfo.SetData(sensitiveInfo);
-        globalTreeNecessityInfo.SetData(necessityInfo);
 
         Shader.SetGlobalBuffer("_globalTreeSlopeInfo", globalTreeSlopeInfo);
         Shader.SetGlobalBuffer("_globalTreeHeightInfo", globalTreeHeightInfo);
         Shader.SetGlobalBuffer("_globalTreeHumidityInfo", globalTreeHumidityInfo);
         Shader.SetGlobalBuffer("_globalTreeSensitiveInfo", globalTreeSensitiveInfo);
-        Shader.SetGlobalBuffer("_globalTreeNecessityInfo", globalTreeNecessityInfo);
+
+        Shader.SetGlobalInt("_globalCurvesDiscretizedBlockSize", Tree.N_INFO_DISCRETIZED);
 
         slopeInfo.Clear();
         heightInfo.Clear();
         humidityInfo.Clear();
         sensitiveInfo.Clear();
-        necessityInfo.Clear();
     }
 
 
@@ -206,8 +218,8 @@ public class TreePool : MonoBehaviour
 
         Shader.SetGlobalInt("_globalMaxPositionBufferSize", 16000);
 
-        GameObject g1 = GameObject.Find("Plane1");
-        g1.GetComponent<MeshRenderer>().material.SetTexture("_MainTex", positionTexture);
+       /// GameObject g1 = GameObject.Find("Plane1");
+       // g1.GetComponent<MeshRenderer>().material.SetTexture("_MainTex", positionTexture);
     }
     
 }

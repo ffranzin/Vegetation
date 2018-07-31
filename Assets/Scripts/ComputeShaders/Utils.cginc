@@ -1,9 +1,11 @@
 
 #define INFINITY 9999999
 
-#define BLOCK_SIZE 100
+#define BLOCK_SIZE 900
 
 #include "StructuresTrees.cginc"
+
+float _globalPixelSize;
 
 
 inline float2 NormalizedPos2ScaledWorldPos(float2 pos, float2 worldPosOrigin, float worldPosBoundSize)
@@ -49,7 +51,12 @@ int CustomRand(float2 seed, int min, int max)
 	return (int)map;
 }
 
+float CustomRandf(float2 seed)
+{
+	float rand = frac(sin(dot(seed, float2(12.9888, 78.233))) * 43758.5453);
 
+	return rand;
+}
 
 //////////////////////////////////
 ///////// ATLAS HELPER  /////////
@@ -99,3 +106,9 @@ float2 WorldPosition2AtlasCoord(QuadTreeInfo _qti, float2 wPos)
 	return _qti.currentNodeAtlasOrigin + p01 * _qti.currentNodeAtlasSize;
 }
 
+
+
+inline float2 WorldCoord2TexCoord(float2 pos)
+{
+	return pos / _globalPixelSize;
+}

@@ -144,7 +144,7 @@ public class TextureManager : MonoBehaviour
             depthBufferBits = 0,
             volumeDepth = 1,
             msaaSamples = 1,
-            enableRandomWrite = false,
+            enableRandomWrite = true,
             autoGenerateMips = false,
             useMipMap = false,
             dimension = UnityEngine.Rendering.TextureDimension.Tex2D,
@@ -296,6 +296,21 @@ public class TextureManager : MonoBehaviour
         tmpRT.Release();
     }
 
+    float[] Byte2FloatArray(byte[] bytes, int size)
+    {
+        float[] results = new float[size];
+        for (int i = 0; i < results.Length; i++)
+        {
+            int byteIndex = i * 4;
+            byte[] localBytes = new byte[] { bytes[i], bytes[i + 1], bytes[i + 2], bytes[i + 3] }; // converts 4 bytes to a float
+            results[i] = System.BitConverter.ToSingle(localBytes, 0);
+            
+        }
+        return results;
+    }
+
+
+
     /// <summary>
     /// Extracts a single channel from RGBAFloat texture.
     /// </summary>
@@ -310,8 +325,10 @@ public class TextureManager : MonoBehaviour
             return null;
         }
 
-        float[] data = tex.GetRawTextureData<float>().ToArray();
+        float[] data = Byte2FloatArray(tex.GetRawTextureData(), tex.width * tex.height);
         float[] singleChannel = new float[data.Length / 4];
+
+
 
         for (int i = channel; i < data.Length; i += 4)
         {

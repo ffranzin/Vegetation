@@ -25,7 +25,7 @@ RWStructuredBuffer<QuadTreeInfo> _qti;
 
 void FillTexture(float2 atlasCenter, float radius, int l)
 {
-	//radius = 4;
+	//radius = 10;
 	int n = radius + 1; // +1 to avoid floor rounding
 
 	for(int i = -n; i<n; i++)
@@ -37,7 +37,7 @@ void FillTexture(float2 atlasCenter, float radius, int l)
 			float dist = length(id - atlasCenter);
 
 			dist = 1 - Remap(dist, 0, radius, 0.0, 1.0);
-
+			
 			//if(l == 1)
 				_texture[id.xy] += float4(dist, 0, 0, 1);
 			//else

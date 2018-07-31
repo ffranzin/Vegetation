@@ -2,20 +2,13 @@
 
 Shader "Custom/MyCustomTerrain" {
 	Properties {
-		_Color("Color", Color) = (1,1,1,1)
-		_MainTex("Albedo (RGB)", 2D) = "white" {}
-
-		_NoiseTex("NoiseTex", 2D) = "white" {}
-
-		_GrassTex("GrassTex", 2D) = "white" {}
-		_GrassNormalTex("GrassNormalTex", 2D) = "white" {}
-
-		_GroundTex("GroundTex", 2D) = "white" {}
-		_GroundNormalTex("GroundNormalTex", 2D) = "white" {}
-
-		_Glossiness("Smoothness", Range(0,1)) = 0.5
-		_Metallic("Metallic", Range(0,1)) = 0.0
-		_EdgeLength("EdgeLength", Range(1,100)) = 5.0
+		_MainTex("GroundTex", 2D) = "white" {}
+		_Stone("stone", 2D) = "white" {}
+		_Grass("grass", 2D) = "white" {}
+		_ground("ground", 2D) = "white" {}
+		_splat("splat", 2D) = "white" {}
+		_splatMontain("splatM", 2D) = "white" {}
+		_WaterMap("Water", 2D) = "white" {}
 	}
 
 
@@ -26,44 +19,88 @@ Shader "Custom/MyCustomTerrain" {
 
 		CGPROGRAM
 		// Physically based Standard lighting model, and enable shadows on all light types
-		#pragma surface surf Standard fullforwardshadows vertex:vert tessellate:tessDistance
+		#pragma surface surf Standard fullforwardshadows vertex:vert //tessellate:tessDistance
 
 		// Use shader model 3.0 target, to get nicer looking lighting
-		#pragma target 3.0
+		#pragma target 5.0
 		#include "Tessellation.cginc"
 
 		sampler2D _MainTex;
-		sampler2D _NoiseTex;
-		
-		
-		sampler2D _GroundTex;
-		sampler2D _GrassTex;
+		sampler2D _WaterMap;
 
-		sampler2D _GroundNormalTex;
-		sampler2D _GrassNormalTex;
-
+		sampler2D _Grass;
+		sampler2D _ground;
+		sampler2D _Stone;
+		sampler2D _splat;
+		sampler2D _splatMontain;
 
 		struct Input {
 			float2 uv_MainTex  : TEXCOORD0;
 			float3 worldPos;
 			//float3 normal : NORMAL;
-
 		};
 
-		half _Glossiness;
-		half _Metallic;
-		fixed4 _Color;
-		float _EdgeLength;
+
+		uniform sampler2D _heightMapAux;
+		
+		uniform sampler2D _debugMap;
 
 
-		uniform sampler2D _HeightMap; 
+
 		uniform float TERRAIN_HEIGHT_MULTIPLIER;
-		uniform float TERRAIN_HEIGHT_LAKE;
-		uniform float ROAD_WIDTH;
-		uniform float4 ROAD_SEGMENTS[100];
-		uniform int ROAD_SEGMENTS_COUNT;
 
 
+		void vert(inout appdata_full v)
+		{
+			float2 uv = v.texcoord.xy;
+			//uv.y = 1 - uv.y;
+			//uv.x = 1 - uv.x;
+
+			float height = tex2Dlod(_heightMapAux, float4(uv, 0, 0));
+			float w = tex2Dlod(_WaterMap, float4(uv, 0, 0)).r;
+
+			if(v.vertex.z >= 0)
+				v.vertex.z += height * TERRAIN_HEIGHT_MULTIPLIER;//- smoothstep(0.1, 1, w) * 4;
+			else
+				v.vertex.z = -5;
+		}
+
+
+
+		void surf (Input IN, inout SurfaceOutputStandard o) {
+
+			float4 color = float4(0,0,1,1); 
+
+			float2 uv = IN.uv_MainTex;
+
+			float4 splat = tex2D(_splat, uv * 5);
+			float4 splatMontain = tex2D(_splatMontain, uv );
+
+
+			float4 grass =  tex2D(_Grass, uv * 5 );
+			float4 ground = tex2D(_ground, uv  * 20);
+			float4 stone = tex2D(_Stone, uv *1);
+
+			color = lerp(ground, grass, splat.r);
+			
+			if(splatMontain.r > 0.1)
+				color = lerp(color, stone, 2 * splatMontain.r);
+
+			float4 water = tex2D(_WaterMap, uv);
+			if(water.r > 0.1)	color = float4(0,0,1,1);
+
+
+			o.Albedo = color.rgb;
+		}
+		ENDCG
+	}
+	FallBack "Diffuse"
+}
+
+
+
+
+/*
 		float4 tessDistance (appdata_full v0, appdata_full v1, appdata_full v2) 
 		{
             float minDist = 1.0;
@@ -97,58 +134,4 @@ Shader "Custom/MyCustomTerrain" {
 		}
 
 
-
-		void vert(inout appdata_full v)
-		{
-			//float h = TERRAIN_HEIGHT_MULTIPLIER;
-			//float2 wPos = mul(unity_ObjectToWorld, float4(v.vertex.xyz, 1)).xz;
-
-			//if (IsInsideRoad(wPos))
-			//	h -= 3;
-			
-			float2 uv = v.texcoord.xy;
-			//uv.y = 1 - uv.y;
-			//uv.x = 1 - uv.x;
-
-			v.vertex.z += tex2Dlod(_HeightMap, float4(uv, 0, 0)).r * TERRAIN_HEIGHT_MULTIPLIER;
-			
-		}
-
-
-
-		void surf (Input IN, inout SurfaceOutputStandard o) {
-
-			float4 c; 
-			float4 n;
-
-			c = tex2D(_HeightMap, IN.uv_MainTex);
-			c = tex2D(_GroundTex, IN.uv_MainTex * 50);
-			/*
-			if (IsInsideRoad(IN.worldPos.xz))
-			{
-				c = tex2D(_RoadTex, IN.uv_MainTex * 100);
-				n = tex2D(_RoadNormalTex, IN.uv_MainTex * 100);
-			}
-			else
-			{
-				float4 grass = tex2D(_GrassTex, IN.uv_MainTex * 50);
-				float4 grassNormal = tex2D(_GrassNormalTex, IN.uv_MainTex * 50);
-
-				float4 ground = tex2D(_GroundTex, IN.uv_MainTex * 50);
-				float4 groundNormal = tex2D(_GroundNormalTex, IN.uv_MainTex * 50);
-
-				float noise = tex2D(_NoiseTex, IN.uv_MainTex * 2).r;
-				float h = tex2D(_HeightMap, IN.uv_MainTex).r;
-
-				c = lerp(ground, grass, noise);
-				n = lerp(groundNormal, grassNormal, noise);
-			}
-			*/
-			o.Albedo = c.rgb;
-			//o.Albedo = float3(tex2D(_HeightMap, IN.uv_MainTex).r, 0, 0);
-			//o.Normal += n.rgb;
-		}
-		ENDCG
-	}
-	FallBack "Diffuse"
-}
+*/

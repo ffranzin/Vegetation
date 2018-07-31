@@ -1,0 +1,33 @@
+<PAMDataset>
+  <Metadata domain="xml:XMP" format="xml">
+    <?xpacket begin="" id="W5M0MpCehiHzreSzNTczkc9d"?>
+    <x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 5.4-c002 1.000000, 0000/00/00-00:00:00        ">
+      <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+        <rdf:Description rdf:about="" xmlns:xmp="http://ns.adobe.com/xap/1.0/">
+          <xmp:CreatorTool>Substance Designer</xmp:CreatorTool>
+        </rdf:Description>
+        <rdf:Description rdf:about="" xmlns:exif="http://ns.adobe.com/exif/1.0/">
+          <exif:ExifVersion>0220</exif:ExifVersion>
+          <exif:PixelXDimension>1024</exif:PixelXDimension>
+          <exif:PixelYDimension>1024</exif:PixelYDimension>
+        </rdf:Description>
+        <rdf:Description rdf:about="" xmlns:tiff="http://ns.adobe.com/tiff/1.0/">
+          <tiff:ImageWidth>1024</tiff:ImageWidth>
+          <tiff:ImageLength>1024</tiff:ImageLength>
+          <tiff:XResolution>72</tiff:XResolution>
+          <tiff:YResolution>72</tiff:YResolution>
+          <tiff:ResolutionUnit>2</tiff:ResolutionUnit>
+        </rdf:Description>
+      </rdf:RDF>
+    </x:xmpmeta>
+    <?xpacket end="w"?>
+  </Metadata>
+  <PAMRasterBand band="1">
+    <Metadata>
+      <MDI key="STATISTICS_MAXIMUM">0.90429663658142</MDI>
+      <MDI key="STATISTICS_MEAN">0.49919991769211</MDI>
+      <MDI key="STATISTICS_MINIMUM">0.38321226835251</MDI>
+      <MDI key="STATISTICS_STDDEV">0.14827799158032</MDI>
+    </Metadata>
+  </PAMRasterBand>
+</PAMDataset>

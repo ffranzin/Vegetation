@@ -5,8 +5,11 @@
 	SubShader {
         Tags { "RenderType"="Opaque"}
         LOD 200
-
+		Cull Off
         CGPROGRAM
+
+		
+
         // Physically based Standard lighting model
         #pragma surface surf Standard addshadow fullforwardshadows
         #pragma multi_compile_instancing
@@ -24,7 +27,7 @@
         };
 		
 		
-
+		sampler2D _MainTex;
 
 		#ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
 			UNITY_DECLARE_TEX2D(_positionsTexture);
@@ -39,9 +42,11 @@
 
 				half2 data = _positionsTexture.Load(posUV).rg;
 
-				//float2 uv = data.xy / 1024;
-				//float h = tex2Dlod(_HeightMap, float4(uv.x, uv.y, 0, 0)).x * TERRAIN_HEIGHT_MULTIPLIER;
-				float h = 0;
+				float2 uv = data.xy / 512;
+
+				float h = tex2Dlod(_HeightMap, float4(uv.x, uv.y, 0, 0)).x * TERRAIN_HEIGHT_MULTIPLIER;
+				
+				//h = 1;
 				float scale = 1;
 
 				unity_ObjectToWorld._11_21_31_41 = float4(scale, 0, 0, 0);
@@ -59,6 +64,8 @@
             fixed4 c = _Color;
 			
 			o.Albedo = c.rgb;
+
+			//o.Albedo = tex2D(_MainTex, IN.uv_MainTex);
 
             o.Alpha = c.a;
         }
