@@ -5,7 +5,7 @@ using UnityEngine.Profiling;
 public class NodePool : MonoBehaviour
 {
 
-    public static readonly int NODE_POOL_SIZE = 5000;
+    public static readonly int NODE_POOL_SIZE = 20000;
     public static readonly int MAX_BUFFER_RELEASED_PER_FRAME = 16;
 
     public static List<_QuadTree> qt_NodePool = new List<_QuadTree>();
@@ -51,12 +51,12 @@ public class NodePool : MonoBehaviour
     /// <summary>
     /// Used to getdata of 'posIniSizeBuffer'/
     /// </summary>
-    static Vector2[] iniTam;
+    static Vector2Int[] iniTam;
 
     void Start()
     {
 
-        iniTam = new Vector2[TreePool.size];
+        iniTam = new Vector2Int[TreePool.size];
 
         for (int i = 0; i < NODE_POOL_SIZE; i++)
         {
@@ -65,7 +65,7 @@ public class NodePool : MonoBehaviour
             qt_NodePool[i].myIdInNodePool = i;
         }
 
-        posIniSizeBuffer = new ComputeBuffer(NODE_POOL_SIZE * TreePool.size, 8);
+        posIniSizeBuffer = new ComputeBuffer(NODE_POOL_SIZE * TreePool.size, 2 * sizeof(int));
 
         Shader.SetGlobalBuffer("_globalPosTreeIniSizeBuffer", posIniSizeBuffer);
         Shader.SetGlobalInt("_globalNodePoolSize", NODE_POOL_SIZE);
@@ -180,6 +180,5 @@ public class NodePool : MonoBehaviour
 
         Graphics.CopyTexture(TreePool.positionTexture, 0, 0, srcX, h, srcWidth, 1,
                              TreePool.positionTextureTmp, 0, 0, dstX, h);
-
     }
 }

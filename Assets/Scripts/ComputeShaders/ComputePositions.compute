@@ -15,7 +15,7 @@ RWTexture2D <float2> _positionsTexture;
 RWStructuredBuffer<QuadTreeInfo> _qti;
 
 //Store initial position and  amount of positions per node in NodePool 
-RWStructuredBuffer<float2> _globalPosTreeIniSizeBuffer;
+RWStructuredBuffer<int2> _globalPosTreeIniSizeBuffer;
 
 int _globalMaxPositionBufferSize;
 int _myIdInNodePool;
@@ -29,8 +29,8 @@ RWStructuredBuffer<float> _locked;
 
 Texture2D<float> TexHeight;
 Texture2D<float> TexWater;
-RWTexture2D<float> TexMoisture;
-RWTexture2D<float> TexSlope;
+Texture2D<float> TexMoisture;
+Texture2D<float> TexSlope;
 
 float GetHeight(float2 pos)
 {
@@ -58,10 +58,9 @@ float GetMoisture(float2 pos)
 
 float EvaluateCurves(float2 pos, float2 pos01, float upperLevelInfo, int indexInTreePool, int vegLevel)
 {
-	return 1;
 	int arrayOffset = indexInTreePool * _globalCurvesDiscretizedBlockSize;
 
-	if (pos.x < 10 || pos.x > 1010 || pos.y < 10 || pos.y > 1010)	return 0;
+	//if (pos.x < 10 || pos.x > 1010 || pos.y < 10 || pos.y > 1010)	return 0;
 
 	pos = WorldCoord2TexCoord(pos);
 
@@ -70,58 +69,57 @@ float EvaluateCurves(float2 pos, float2 pos01, float upperLevelInfo, int indexIn
 	int currentIndexSlope = _globalCurvesDiscretizedBlockSize * Remap(GetSlope(pos), 0, 0.4, 0, 1);
 
 	float height = _globalTreeHeightInfo[arrayOffset + currentIndexHeight];
-	//float moisture = _globalTreeHumidityInfo[arrayOffset + currentIndexHumidity];
+	float moisture = _globalTreeHumidityInfo[arrayOffset + currentIndexHumidity];
 	float slope = _globalTreeSlopeInfo[arrayOffset + currentIndexSlope];
-
-
-	float avg = slope;
-	avg /= 1.0;
-
-	if (avg < 0.3)	return 0;
 
 	return 1;
 }
 
-
-
 int EvaluatePosition(float2 wPos, float2 pos01)
 {
-	float radius = 3;
-	//float2 uv0 = WorldPosition2AtlasInfoUpperLevelUV(_qti[0], wPos);
-	//float2 uv1 = WorldPosition2AtlasInfoUpperLevelUV(_qti[0], wPos + float2(radius, radius));
-	//float2 uv2 = WorldPosition2AtlasInfoUpperLevelUV(_qti[0], wPos + float2(-radius, radius));
-	//float2 uv3 = WorldPosition2AtlasInfoUpperLevelUV(_qti[0], wPos + float2(radius, -radius));
-	//float2 uv4 = WorldPosition2AtlasInfoUpperLevelUV(_qti[0], wPos + float2(-radius, -radius));
-
-	float upperLevelInfo = 0;//_texture[uv0].r + _texture[uv1].r + _texture[uv2].r + _texture[uv3].r + _texture[uv4].r;
-
+	float upperLevelInfo = 0;
+	if(_qti[0].vegLevel > 1 && false)
+	{
+		float radius = 3;
+		float2 uv0 = WorldPosition2AtlasInfoUpperLevelUV(_qti[0], wPos);
+		float2 uv1 = WorldPosition2AtlasInfoUpperLevelUV(_qti[0], wPos + float2(radius, radius));
+		float2 uv2 = WorldPosition2AtlasInfoUpperLevelUV(_qti[0], wPos + float2(-radius, radius));
+		float2 uv3 = WorldPosition2AtlasInfoUpperLevelUV(_qti[0], wPos + float2(radius, -radius));
+		float2 uv4 = WorldPosition2AtlasInfoUpperLevelUV(_qti[0], wPos + float2(-radius, -radius));
+		upperLevelInfo  = _texture[uv0].r + _texture[uv1].r + _texture[uv2].r + _texture[uv3].r + _texture[uv4].r;
+	}
+	
 	//float2 uv = WorldPosition2AtlasInfoUpperLevelUV(_qti[0], wPos);
 	//float upperLevelInfo = _texture[uv].r;
 
 	//if(_qti[0].vegLevel > 1 && upperLevelInfo/5 > 0.15)	return 0;
 
 
-	int r = CustomRand(wPos, 0, 30); // _qti[0].vegLevel;//
-
+	int r;// = _qti[0].vegLevel - 1;
+	
+	if(_qti[0].vegLevel == 1)
+		r = CustomRand(wPos, 0, 40);
+	else if (_qti[0].vegLevel == 2)
+		r = CustomRand(wPos, 40, 80);
+	else if (_qti[0].vegLevel == 3)
+		r = CustomRand(wPos, 80, 120);
 
 	int currentIndex = _globalTreeCountPositionsBuffer[r];
 
 	if(currentIndex > _globalMaxPositionBufferSize)	return 0;
 
-	//if(EvaluateCurves(wPos, pos01, upperLevelInfo, r, _qti[0].vegLevel) > frac(wPos.x))
 	if(EvaluateCurves(wPos, pos01, upperLevelInfo, r, _qti[0].vegLevel) == 0)
 		return 0;
 
-	_globalTreeCountPositionsBuffer[r]++;
-	
+	InterlockedAdd(_globalTreeCountPositionsBuffer[r], 1);
+	//_globalTreeCountPositionsBuffer[r]++;
 	_positionsTexture[float2(currentIndex, r)] = float2(wPos.x, wPos.y);
 
+	//InterlockedAdd(_globalPosTreeIniSizeBuffer[_globalTreePoolSize * _myIdInNodePool + r].y, 1);
 	_globalPosTreeIniSizeBuffer[_globalTreePoolSize * _myIdInNodePool + r].y ++;
 
 	return 1;
 }
-
-
 
 
 
@@ -133,50 +131,31 @@ void SetIniSizeBuffer (uint3 id : SV_DispatchThreadID)
 
 	_globalPosTreeIniSizeBuffer[iOffset + id.x].x = _globalTreeCountPositionsBuffer[id.x];
 	_globalPosTreeIniSizeBuffer[iOffset + id.x].y = 0;
-
-	/*int iOffset = _globalTreePoolSize * _myIdInNodePool;
-
-	for(int i = 0; i<_globalTreePoolSize; i++)
-	{
-		_globalPosTreeIniSizeBuffer[iOffset + i].x = _globalTreeCountPositionsBuffer[i];
-		_globalPosTreeIniSizeBuffer[iOffset + i].y = 0;
-	}*/
 }
 
 
 
-[numthreads(BLOCK_SIZE, 1, 1)]
-void ComputePosition(uint3 id : SV_DispatchThreadID)
-{
-	int NUM_THREAD = 1;
-
-	int init = id.x;// *(BLOCK_SIZE / NUM_THREAD);
-	//int size = init + (BLOCK_SIZE / NUM_THREAD);
-
-	_positionsBuffer[id.x] = NormalizedPos2ScaledWorldPos(_GlobalPrecomputedPositionL1[id.x],
-		_qti[0].currentNodeWorldOrigin,
-		_qti[0].currentNodeWorldSize);
-
-	_positionsBuffer[id.x] *= EvaluatePosition(_positionsBuffer[id.x], _GlobalPrecomputedPositionL1[id.x]);
-}
-
-//[numthreads(1,1,1)]
-//void ComputePosition (uint3 id : SV_DispatchThreadID)
+//[numthreads(BLOCK_SIZE, 1, 1)]
+//void ComputePosition(uint3 id : SV_DispatchThreadID)
 //{
-//	int NUM_THREAD = 1;
+//	_positionsBuffer[id.x] = NormalizedPos2ScaledWorldPos(_GlobalPrecomputedPositionL1[id.x],
+//		_qti[0].currentNodeWorldOrigin,
+//		_qti[0].currentNodeWorldSize);
 //
-//	int init = id.x * (BLOCK_SIZE / NUM_THREAD);
-//	int size = init + (BLOCK_SIZE / NUM_THREAD);
-//
-//	for(int i = init; i < size; i++)
-//	{
-//		_positionsBuffer[i] = NormalizedPos2ScaledWorldPos(	_GlobalPrecomputedPositionL1[i], 
-//															_qti[0].currentNodeWorldOrigin, 
-//															_qti[0].currentNodeWorldSize);
-//
-//		_positionsBuffer[i] *= EvaluatePosition(_positionsBuffer[i], _GlobalPrecomputedPositionL1[i]);
-//	}
+//	_positionsBuffer[id.x] *= EvaluatePosition(_positionsBuffer[id.x], _GlobalPrecomputedPositionL1[id.x]);
 //}
+
+
+[numthreads(1000,1,1)]
+void ComputePosition (uint3 id : SV_DispatchThreadID)
+{
+	int i = id.x;
+	_positionsBuffer[i] = NormalizedPos2ScaledWorldPos(	_GlobalPrecomputedPositionL1[i], 
+														_qti[0].currentNodeWorldOrigin, 
+														_qti[0].currentNodeWorldSize);
+
+	_positionsBuffer[i] *= EvaluatePosition(_positionsBuffer[i], _GlobalPrecomputedPositionL1[i]);
+}
 
 
 
@@ -233,6 +212,12 @@ void UpdatePosCounter(uint3 id : SV_DispatchThreadID)
 		_globalPosTreeIniSizeBuffer[_myIdInNodePool * _globalTreePoolSize + id.x].y;
 
 	_globalPosTreeIniSizeBuffer[_myIdInNodePool * _globalTreePoolSize + id.x].y = 0;
+
+	_globalTreeCountPositionsBuffer[id.x] = 0;
+		//_globalPosTreeIniSizeBuffer[_myIdInNodePool * _globalTreePoolSize + id.x].y;
+
+	_globalPosTreeIniSizeBuffer[_myIdInNodePool * _globalTreePoolSize + id.x].y = 0;
+
 
 	/*for(int i = 0; i < _globalTreePoolSize; i++)
 	{

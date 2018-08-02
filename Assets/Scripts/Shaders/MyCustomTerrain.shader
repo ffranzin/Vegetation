@@ -2,13 +2,18 @@
 
 Shader "Custom/MyCustomTerrain" {
 	Properties {
-		_MainTex("GroundTex", 2D) = "white" {}
-		_Stone("stone", 2D) = "white" {}
-		_Grass("grass", 2D) = "white" {}
-		_ground("ground", 2D) = "white" {}
-		_splat("splat", 2D) = "white" {}
-		_splatMontain("splatM", 2D) = "white" {}
-		_WaterMap("Water", 2D) = "white" {}
+		_MainTex("HeightMap", 2D) = "white" {}
+		_WaterMap("WaterMap", 2D) = "white" {}
+		_Stone("Stone", 2D) = "white" {}
+		_Grass("Grass", 2D) = "white" {}
+		_Ground("Ground", 2D) = "white" {}
+		_Water("Water", 2D) = "white" {}
+
+		_H("H", range(1.0, 500.0)) = 150
+
+		_L1("L1", range(0.0, 3.0)) = 0.5
+		_L2("L2", range(0.0, 3.0)) = 0.5
+		_L3("NormalIntesity", range(0.0, 3.0)) = 0.5
 	}
 
 
@@ -23,115 +28,105 @@ Shader "Custom/MyCustomTerrain" {
 
 		// Use shader model 3.0 target, to get nicer looking lighting
 		#pragma target 5.0
-		#include "Tessellation.cginc"
 
 		sampler2D _MainTex;
 		sampler2D _WaterMap;
 
 		sampler2D _Grass;
-		sampler2D _ground;
+		sampler2D _Ground;
 		sampler2D _Stone;
-		sampler2D _splat;
-		sampler2D _splatMontain;
+		sampler2D _Water;
 
 		struct Input {
 			float2 uv_MainTex  : TEXCOORD0;
 			float3 worldPos;
-			//float3 normal : NORMAL;
+			float3 worldNormal;
 		};
 
+		float _L1;
+		float _L2;
+		float _L3;
+		float _H;
 
-		uniform sampler2D _heightMapAux;
+		float4 _MainTex_TexelSize;
 		
-		uniform sampler2D _debugMap;
+		float4 _WaterMap_ST;
+		float4 _Grass_ST;
+		float4 _Ground_ST;
+		float4 _Stone_ST;
+		float4 _Water_ST;
 
-
-
-		uniform float TERRAIN_HEIGHT_MULTIPLIER;
-
-
-		void vert(inout appdata_full v)
+		void vert(inout appdata_base v)
 		{
 			float2 uv = v.texcoord.xy;
 			//uv.y = 1 - uv.y;
 			//uv.x = 1 - uv.x;
 
-			float height = tex2Dlod(_heightMapAux, float4(uv, 0, 0));
-			float w = tex2Dlod(_WaterMap, float4(uv, 0, 0)).r;
+			float height = tex2Dlod(_MainTex, float4(uv, 0, 0));
+			
+			float3 n;
+			float2 _PixelSizeDir = float2(1,-1);
+			float bump_level = 8.0 * _L3;
 
-			if(v.vertex.z >= 0)
-				v.vertex.z += height * TERRAIN_HEIGHT_MULTIPLIER;//- smoothstep(0.1, 1, w) * 4;
-			else
+			float tl = tex2Dlod(_MainTex, float4(uv + (_MainTex_TexelSize.xy * float2(-1, -1)), 0, 0)).r;
+			float t = tex2Dlod(_MainTex, float4(uv + (_MainTex_TexelSize.xy * float2(0, -1)), 0, 0)).r;
+			float tr = tex2Dlod(_MainTex, float4(uv + (_MainTex_TexelSize.xy * float2(1, -1)), 0, 0)).r;
+
+			float l = tex2Dlod(_MainTex, float4(uv + (_MainTex_TexelSize.xy * float2(-1, 0)), 0, 0)).r;
+			float c = tex2Dlod(_MainTex, float4(uv + (_MainTex_TexelSize.xy * float2(0, 0)), 0, 0)).r;
+			float r = tex2Dlod(_MainTex, float4(uv + (_MainTex_TexelSize.xy * float2(1, 0)), 0, 0)).r;
+
+			float bl = tex2Dlod(_MainTex, float4(uv + (_MainTex_TexelSize.xy * float2(-1, 1)), 0, 0)).r;
+			float b = tex2Dlod(_MainTex, float4(uv + (_MainTex_TexelSize.xy * float2(0, 1)), 0, 0)).r;
+			float br = tex2Dlod(_MainTex, float4(uv + (_MainTex_TexelSize.xy * float2(1, 1)), 0, 0)).r;
+
+			float dX = tr + 2 * r + br - tl - 2 * l - bl;
+			float dY = bl + 2 * b + br - tl - 2 * t - tr;
+
+			// Build the normalized normal
+			n = normalize(float3(-dX, 1.0f / bump_level, -dY) * float3(_PixelSizeDir.x, 1, _PixelSizeDir.y));
+
+			v.normal.xyz = n.xzy;
+
+			if (v.vertex.z >= 0) {
+				v.vertex.z += height * _H;
+			}
+			else {
 				v.vertex.z = -5;
+				v.normal = fixed3(0,0,0);
+			}
 		}
-
 
 
 		void surf (Input IN, inout SurfaceOutputStandard o) {
 
-			float4 color = float4(0,0,1,1); 
+			float h = tex2D(_MainTex, IN.uv_MainTex);
 
-			float2 uv = IN.uv_MainTex;
-
-			float4 splat = tex2D(_splat, uv * 5);
-			float4 splatMontain = tex2D(_splatMontain, uv );
-
-
-			float4 grass =  tex2D(_Grass, uv * 5 );
-			float4 ground = tex2D(_ground, uv  * 20);
-			float4 stone = tex2D(_Stone, uv *1);
-
-			color = lerp(ground, grass, splat.r);
+			fixed4 col = lerp(
+				tex2D(_Grass, IN.uv_MainTex * _Grass_ST.xy),
+				lerp(tex2D(_Ground, IN.uv_MainTex * _Ground_ST.xy),
+					tex2D(_Stone, IN.uv_MainTex * _Stone_ST.xy),
+					saturate(h * _L1)),
+				saturate(h * _L2));
 			
-			//if(splatMontain.r > 0.1)
-			//	color = lerp(color, stone, 2 * splatMontain.r);
+			float s = length(IN.worldNormal.rb);
 
-			float4 water = tex2D(_WaterMap, uv);
-			if(water.r > 0.1)	color = float4(0,0,1,1);
-
-
-			o.Albedo = color.rgb;
+			col = lerp(col,
+				tex2D(_Stone, IN.uv_MainTex * _Stone_ST.xy),
+				saturate(s * (1.0 + _L1)));
+			
+			float w = tex2D(_WaterMap, IN.uv_MainTex);
+			if (w > 0) {
+				col = lerp(col, tex2D(_Water, IN.uv_MainTex * _Water_ST.xy), saturate(w));
+				col += fixed4(-0.15, -0.15, 0.35, 0);
+			}
+			
+			o.Albedo = col;
+			o.Metallic = 0;
+			o.Occlusion = 1 - s;
+			o.Smoothness = w;
 		}
 		ENDCG
 	}
 	FallBack "Diffuse"
 }
-
-
-
-
-/*
-		float4 tessDistance (appdata_full v0, appdata_full v1, appdata_full v2) 
-		{
-            float minDist = 1.0;
-            float maxDist = 25.0;
-            return UnityDistanceBasedTess(v0.vertex, v1.vertex, v2.vertex, minDist, maxDist, 10000);
-        }
-
-
-		float4 tessDistance1(appdata_full v0, appdata_full v1, appdata_full v2)
-		{
-			return UnityEdgeLengthBasedTess(v0.vertex, v1.vertex, v2.vertex, 1);
-		}
-
-
-		float DistanceLinePoint(float2 l0, float2 l1, float2 p)
-		{
-			float2 dir1 = (l1 - l0);
-			float2 dir2 = (l0 - l1);
-
-			float2 l0p = (p - l0);
-			float2 l1p = (p - l1);
-
-			float dot1 = dot(l0p, normalize(dir1));
-			float dot2 = dot(l1p, normalize(dir2));
-
-			if (dot1 < 0 || dot2 < 0) return 99999;
-
-			float2 projection = l0 + normalize(dir1) * dot1;
-
-			return length(projection - p);
-		}
-
-
-*/

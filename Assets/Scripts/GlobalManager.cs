@@ -6,9 +6,9 @@ public class GlobalManager : MonoBehaviour
 {
     public static Atlas m_atlas;
     
-    public static float VEG_MIN_DIST_L1 = 20;
-    public static float VEG_MIN_DIST_L2 = 10;
-    public static float VEG_MIN_DIST_L3 = 5;
+    public static float VEG_MIN_DIST_L1 = 6;
+    public static float VEG_MIN_DIST_L2 = 4;
+    public static float VEG_MIN_DIST_L3 = 1;
     public static int lowerestQuadTreeBlockSize = 256;
     
     public static float VIEW_RADIUS_VEG_L1 = 5000;
@@ -44,15 +44,15 @@ public class GlobalManager : MonoBehaviour
         globalPrecomputedTileBufferL1 = new ComputeBuffer(positions.Count, 8);
         globalPrecomputedTileBufferL1.SetData(positions);
         
-        positions.Clear();
-        PrecomputedPositionsBuffer.GeneratePos(positions, lowerestQuadTreeBlockSize * 2, VEG_MIN_DIST_L2, 2);
-        globalPrecomputedTileBufferL2 = new ComputeBuffer(positions.Count, 8);
-        globalPrecomputedTileBufferL2.SetData(positions);
+        //positions.Clear();
+        //PrecomputedPositionsBuffer.GeneratePos(positions, lowerestQuadTreeBlockSize * 2, VEG_MIN_DIST_L2, 2);
+        //globalPrecomputedTileBufferL2 = new ComputeBuffer(positions.Count, 8);
+        //globalPrecomputedTileBufferL2.SetData(positions);
          
-        positions.Clear();
-        PrecomputedPositionsBuffer.GeneratePos(positions, lowerestQuadTreeBlockSize, VEG_MIN_DIST_L3, 1);
-        globalPrecomputedTileBufferL3 = new ComputeBuffer(positions.Count, 8);
-        globalPrecomputedTileBufferL3.SetData(positions);
+        //positions.Clear();
+        //PrecomputedPositionsBuffer.GeneratePos(positions, lowerestQuadTreeBlockSize, VEG_MIN_DIST_L3, 1);
+        //globalPrecomputedTileBufferL3 = new ComputeBuffer(positions.Count, 8);
+        //globalPrecomputedTileBufferL3.SetData(positions);
 
         Shader.SetGlobalBuffer("_GlobalPrecomputedPositionL1", globalPrecomputedTileBufferL1);
         Shader.SetGlobalBuffer("_GlobalPrecomputedPositionL2", globalPrecomputedTileBufferL2);
@@ -94,8 +94,8 @@ public class GlobalManager : MonoBehaviour
         VIEW_RADIUS_VEG_L3 = Mathf.Lerp(100, UI.UI_viewRangeVegL3, camHeight);
 
 
-        VIEW_RADIUS_VEG_L1 = 4000;
-        VIEW_RADIUS_VEG_L2 = 2000;
-        VIEW_RADIUS_VEG_L3 = 1000;
+        VIEW_RADIUS_VEG_L1 = 2000;
+        VIEW_RADIUS_VEG_L2 = 1000;
+        VIEW_RADIUS_VEG_L3 = 500;
     }
 }

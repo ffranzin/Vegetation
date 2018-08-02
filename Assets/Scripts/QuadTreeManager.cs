@@ -94,7 +94,7 @@ public class QuadTreeManager : MonoBehaviour
     static int QUADTREE_VEG_LEVEL_2;
     static int QUADTREE_VEG_LEVEL_3;
 
-    static int QUADTREE_MAX_GEN_POS_NODES_PER_FRAME = 64;
+    static int QUADTREE_MAX_GEN_POS_NODES_PER_FRAME = 100000;
 
     static int QUADTREE_GEN_POS_NODE = 0;
 
@@ -235,18 +235,21 @@ public class QuadTreeManager : MonoBehaviour
             qt.atlasPage = GlobalManager.m_atlas.GetPage();
             DispatcherComputePositions.ComputePositions(qt, GlobalManager.VEG_MIN_DIST_L1 / 2, 1);
             hasDispath = true;
+            genl1++;
         }
         else if (qt.level == QUADTREE_VEG_LEVEL_2)
         {
             qt.atlasPage = GlobalManager.m_atlas.GetPage();
             DispatcherComputePositions.ComputePositions(qt, GlobalManager.VEG_MIN_DIST_L2 / 2, 2);
             hasDispath = true;
+            genl2++;
         }
         else if (qt.level == QUADTREE_VEG_LEVEL_3)
         {
             qt.atlasPage = GlobalManager.m_atlas.GetPage();
             DispatcherComputePositions.ComputePositions(qt, GlobalManager.VEG_MIN_DIST_L3 / 2, 3);
             hasDispath = true;
+            genl3++;
         }
 
         if (hasDispath)
@@ -265,14 +268,14 @@ public class QuadTreeManager : MonoBehaviour
     /// These nodes are re-added in nodePool
     /// </summary>
     /// <param name="qt"></param>
-    public void ClearNodes(_QuadTree qt)
+    public void ClearNodes(_QuadTree qt, bool clearAll = false)
     {
         if (qt == null) return;
 
         for (int i = 0; i < qt.children.Length; i++)
-            ClearNodes(qt.children[i]);
+            ClearNodes(qt.children[i], clearAll);
 
-        if (qt.parent != null && !NodeIsVisible(qt.parent))
+        if (qt.parent != null && (clearAll || !NodeIsVisible(qt.parent)))
             NodePool.NodeRelease(qt);
     }
 
@@ -302,14 +305,22 @@ public class QuadTreeManager : MonoBehaviour
 
 
 
-
+    static int genl1, genl2, genl3;
     static int avgl1, avgl2, avgl3;
     static int generated;
     static GameObject g;
     float timeCounteravg = 0;
-    bool block = false;
+    bool block = true;
+
+
+    float timeravg = 0;
+    float timer = 0;
+
     private void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Space))
+            block = !block;
+
         if (block) return;
         
         if (m_quadTree == null) return;
@@ -319,32 +330,42 @@ public class QuadTreeManager : MonoBehaviour
         frustumPlanes = GeometryUtility.CalculateFrustumPlanes(Camera.main);
 
         System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+
         sw.Start();
-
+        Profiler.BeginSample("Quadtree" + Time.frameCount);
         VerifyNewNodes(m_quadTree);
-        
+        Profiler.EndSample();
         sw.Stop();
-
-        if (sw.Elapsed.Milliseconds > 0 && generated > 0)
-        {
-            timeCounteravg = ((timeCounteravg + (sw.Elapsed.Milliseconds / generated))/2);
-            Debug.Log(sw.Elapsed.Milliseconds / generated);
-        }
-        generated = 0;
-
-        if ((Camera.main.transform.position.x0z() - TerrainManager.TERRAIN_END).magnitude < GlobalManager.VIEW_RADIUS_VEG_L1)
-        {
-            Debug.Log("veg L1 " + avgl1);
-            Debug.Log("veg L2 " + avgl2);
-            Debug.Log("veg L3 " + avgl3);
-            Debug.Log("TIMER " + timeCounteravg);
-            block = true;
-        }
         
+        Debug.Log(sw.Elapsed.Milliseconds +"ms   "+ QUADTREE_GEN_POS_NODE +"  : "+
+            (float)sw.Elapsed.Milliseconds/ QUADTREE_GEN_POS_NODE +"ms/node");
+
+        Debug.Log(genl1 + "  " + genl2 +"  "+ genl3);
+        
+        if(timeravg < 0.001)
+        {
+            timeravg = (float)sw.Elapsed.Milliseconds / QUADTREE_GEN_POS_NODE;
+            timer = (float)sw.Elapsed.Milliseconds;
+        }
+        else
+        {
+            timeravg = (timeravg + (float)sw.Elapsed.Milliseconds / QUADTREE_GEN_POS_NODE)/2;
+            timer = (timer + sw.Elapsed.Milliseconds)/2;
+        }
+        Debug.Log("TIMERS:"+timer +"   " + timeravg);
+        
+        genl1 = genl2 = genl3 = 0;
+        
+        generated = 0;
         
         ClearAll();
+
         UpdateTreesQuantity();
-        MoveCam();
+
+        ClearNodes(m_quadTree, true);
+
+        block = !block;
+        //MoveCam();
     }
 
 
@@ -358,7 +379,7 @@ public class QuadTreeManager : MonoBehaviour
         }
         
         Camera.main.transform.position = Camera.main.transform.position + 
-                                    (TerrainManager.TERRAIN_END).normalized * 100 * Time.deltaTime;
+                                    (TerrainManager.TERRAIN_END).normalized * 1000 * Time.deltaTime;
 
         Camera.main.transform.LookAt(g.transform);
     }
@@ -367,7 +388,7 @@ public class QuadTreeManager : MonoBehaviour
 
     static void UpdateTreesQuantity()
     {
-        if (Time.frameCount % 30 != 0) return;
+        //if (Time.frameCount % 30 != 0) return;
 
         int[] pos;
 
@@ -389,7 +410,7 @@ public class QuadTreeManager : MonoBehaviour
     /// </summary>
     public void ClearAll()
     {
-        if (Time.frameCount % 60 != 0) return;
+        if (Time.frameCount % 240 != 0) return;
         
         ClearNodes(m_quadTree);
 

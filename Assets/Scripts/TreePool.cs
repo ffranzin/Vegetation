@@ -63,53 +63,53 @@ public class TreePool : MonoBehaviour
         //    id++;
         //}
 
-        int n = 10;
+        int n = 40;
         for (int k = 0; k < n; k++)
         {
-                GameObject go = Instantiate(_treePool[0]);
+            GameObject go = Instantiate(_treePool[0]);
 
-                Tree t = go.GetComponent<Tree>();
+            Tree t = go.GetComponent<Tree>();
 
-                if (t == null) Debug.LogError("Missing Component.");
+            if (t == null) Debug.LogError("Missing Component.");
 
-                t.myIndexInTreePool = id;
+            t.myIndexInTreePool = id;
 
-                treePool.Add(t);
+            treePool.Add(t);
 
-                id++;
-            
+            id++;
+
         }
 
         for (int k = 0; k < n; k++)
         {
-                GameObject go = Instantiate(_treePool[1]);
+            GameObject go = Instantiate(_treePool[1]);
 
-                Tree t = go.GetComponent<Tree>();
+            Tree t = go.GetComponent<Tree>();
 
-                if (t == null) Debug.LogError("Missing Component.");
+            if (t == null) Debug.LogError("Missing Component.");
 
-                t.myIndexInTreePool = id;
+            t.myIndexInTreePool = id;
 
-                treePool.Add(t);
+            treePool.Add(t);
 
-                id++;
-            
+            id++;
+
         }
 
         for (int k = 0; k < n; k++)
         {
-                GameObject go = Instantiate(_treePool[2]);
+            GameObject go = Instantiate(_treePool[2]);
 
-                Tree t = go.GetComponent<Tree>();
+            Tree t = go.GetComponent<Tree>();
 
-                if (t == null) Debug.LogError("Missing Component.");
+            if (t == null) Debug.LogError("Missing Component.");
 
-                t.myIndexInTreePool = id;
+            t.myIndexInTreePool = id;
 
-                treePool.Add(t);
+            treePool.Add(t);
 
-                id++;
-            
+            id++;
+
         }
 
 
@@ -137,7 +137,7 @@ public class TreePool : MonoBehaviour
         vegAmount = new int[3];
         int count = 0;
         int level = 0;
-
+        
         treeCountPositionsBuffer.GetData(positionsPerTreeAmountData);
 
         foreach (Tree t in treePool)
@@ -146,6 +146,10 @@ public class TreePool : MonoBehaviour
             vegAmount[level - 1] += count;
         }
 
+        Debug.Log("veg l1 " + vegAmount[0]);
+        Debug.Log("veg l2 " + vegAmount[1]);
+        Debug.Log("veg l3 " + vegAmount[2]);
+        
         UI.UpdateAmount(vegAmount);
     }
 

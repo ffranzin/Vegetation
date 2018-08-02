@@ -1,7 +1,7 @@
 
 #define INFINITY 9999999
 
-#define BLOCK_SIZE 100
+#define BLOCK_SIZE 15000
 
 #include "StructuresTrees.cginc"
 
@@ -50,6 +50,7 @@ int CustomRand(float2 seed, int min, int max)
 
 	return (int)map;
 }
+
 
 float CustomRandf(float2 seed)
 {

@@ -153,12 +153,12 @@ public class MoistureDistribuition : MonoBehaviour
     #region PUBLIC METHODS
     private void Awake()
     {
-        //LoadDataFromFiles();
-        //parameters.s_Atlas = TexManager.AtlasDimensions;
-        //TexManager.InitTextures(parameters.s_Atlas, parameters.s_Splat);
-        //InitComputes(parameters.s_Atlas, parameters.s_Splat);
+        LoadDataFromFiles();
+        parameters.s_Atlas = TexManager.AtlasDimensions;
+        TexManager.InitTextures(parameters.s_Atlas, parameters.s_Splat);
+        InitComputes(parameters.s_Atlas, parameters.s_Splat);
 
-        //CalculateAll(Vector2Int.zero);
+        CalculateAll(Vector2Int.zero);
     }
 
     private void Update()
@@ -179,7 +179,7 @@ public class MoistureDistribuition : MonoBehaviour
     public void CalculateAll(Vector2Int position)
     {
         // Calculate All
-        //Profiler.BeginSample("Calculate All GPU");
+        Profiler.BeginSample("Calculate All GPU");
 
         UpdatePosition(position);
         
@@ -189,7 +189,7 @@ public class MoistureDistribuition : MonoBehaviour
         CalculateWaterSpread();
         CalculateMoisture();
 
-        // Profiler.EndSample();
+        Profiler.EndSample();
     }
 
     /// <summary>

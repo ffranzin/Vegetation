@@ -21,16 +21,14 @@ public class DispatcherComputePositions : MonoBehaviour
 
     public static void ComputePositions(_QuadTree qt, float radius, int vegLevel)
     {
-        System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
-
-        sw.Start();
         if (qt == null || qt.atlasPage == null) return;
 
         ComputeBuffer a = new ComputeBuffer(1, 4);
 
         // moisture.CalculateAll(new Vector2Int((int)(qt.bound.min.x / TerrainManager.PIXEL_WIDTH),
         //                                    (int)(qt.bound.min.z / TerrainManager.PIXEL_HEIGHT)));
-        //moisture.CalculateAll(new Vector2Int(0, 0));
+
+        moisture.CalculateAll(new Vector2Int(0, 0));
         
         QuadTreeInfo qtInfo = qt.QuadTreeInfo(vegLevel, radius);
         ComputeBuffer qtInfoBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(QuadTreeInfo)));
@@ -63,20 +61,21 @@ public class DispatcherComputePositions : MonoBehaviour
         ///////////////////////////////////////////////////
         //DISPATCHS
         ///////////////////////////////////////////////////
+        Profiler.BeginSample("Splats");
         m_computeSplat.Dispatch(clearKernel, s, s, 1);
 
         m_computePositions.Dispatch(setIniSizeBufferKernel, TreePool.size, 1, 1);
-        
-        m_computePositions.Dispatch(computePosKernel, 1, 1, 1);
-        
-        //m_computeSplat.Dispatch(currentDFKernel, 128, 1, 1);
-        
-        //if (vegLevel > 1)
-          //  m_computeSplat.Dispatch(transferDFKernel, s, s, 1);
 
-        a.GetData(new int[4]);
-
-        sw.Stop();
+        
+        m_computePositions.Dispatch(computePosKernel, 15, 1, 1);
+        
+        m_computeSplat.Dispatch(currentDFKernel, 128, 1, 1);
+        
+        if (vegLevel > 1)
+            m_computeSplat.Dispatch(transferDFKernel, s, s, 1);
+        Profiler.EndSample();
+        //a.GetData(new int[4]);
+        
         //Debug.Log(" TIMER : " + sw.Elapsed.Milliseconds + "|| blockSize : " + qt.bound.size.x);
     }
 
@@ -128,9 +127,7 @@ public class DispatcherComputePositions : MonoBehaviour
         m_computePositions.SetTexture(computePosKernel, "TexSlope", moisture.TexManager.m_slopeTex);
         m_computePositions.SetTexture(computePosKernel, "TexMoisture", moisture.TexManager.m_moistureTex);
         m_computePositions.SetTexture(computePosKernel, "TexHeight", moisture.TexManager.m_heightMapTex);
-
     }
-
 }
 
 

@@ -149,11 +149,11 @@ public class Tree : MonoBehaviour
 
     public void Update()
     {
-        if (Input.GetKeyDown(KeyCode.R)) enableRender = !enableRender;
+        //if (Input.GetKeyDown(KeyCode.R)) enableRender = !enableRender;
         
         if (positionsGenerated == 0) return;
         bound.center = Camera.main.transform.position;
-        Graphics.DrawMeshInstancedIndirect(drawMesh, 0, m_material, bound, argsBuffer);
+       // Graphics.DrawMeshInstancedIndirect(drawMesh, 0, m_material, bound, argsBuffer);
     }
 
 
