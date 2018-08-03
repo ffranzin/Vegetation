@@ -29,7 +29,7 @@ public class DispatcherComputePositions : MonoBehaviour
         //                                    (int)(qt.bound.min.z / TerrainManager.PIXEL_HEIGHT)));
 
         moisture.CalculateAll(new Vector2Int(0, 0));
-        
+        return;
         QuadTreeInfo qtInfo = qt.QuadTreeInfo(vegLevel, radius);
         ComputeBuffer qtInfoBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(QuadTreeInfo)));
         qtInfoBuffer.SetData(new QuadTreeInfo[1] { qtInfo });
@@ -67,7 +67,7 @@ public class DispatcherComputePositions : MonoBehaviour
         m_computePositions.Dispatch(setIniSizeBufferKernel, TreePool.size, 1, 1);
 
         
-        m_computePositions.Dispatch(computePosKernel, 15, 1, 1);
+        m_computePositions.Dispatch(computePosKernel, 1, 1, 1);
         
         m_computeSplat.Dispatch(currentDFKernel, 128, 1, 1);
         

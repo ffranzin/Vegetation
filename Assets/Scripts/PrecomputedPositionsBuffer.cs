@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class PrecomputedPositionsBuffer : MonoBehaviour {
     
-    public static void GeneratePos(List<Vector2> positions, int boundSize, float minDist, float border = 3, int nPos = 20000)
+    public static void GeneratePos(List<Vector2> positions, int boundSize, float minDist, float border = 3, int nPos = 1000)
     {
         int noLoop = nPos * 5;
 

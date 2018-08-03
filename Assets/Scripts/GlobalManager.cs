@@ -94,8 +94,8 @@ public class GlobalManager : MonoBehaviour
         VIEW_RADIUS_VEG_L3 = Mathf.Lerp(100, UI.UI_viewRangeVegL3, camHeight);
 
 
-        VIEW_RADIUS_VEG_L1 = 2000;
-        VIEW_RADIUS_VEG_L2 = 1000;
-        VIEW_RADIUS_VEG_L3 = 500;
+        VIEW_RADIUS_VEG_L1 = 10000;
+        VIEW_RADIUS_VEG_L2 = 5000;
+        VIEW_RADIUS_VEG_L3 = 3000;
     }
 }
