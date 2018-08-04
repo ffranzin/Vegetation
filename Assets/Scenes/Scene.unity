@@ -18,15 +18,15 @@ RenderSettings:
   m_FogColor: {r: 0.9481132, g: 0.98547167, b: 1, a: 1}
   m_FogMode: 1
   m_FogDensity: 0.001
-  m_LinearFogStart: 800
-  m_LinearFogEnd: 2600
+  m_LinearFogStart: 550
+  m_LinearFogEnd: 2478.6
   m_AmbientSkyColor: {r: 1, g: 1, b: 1, a: 1}
   m_AmbientEquatorColor: {r: 0.114, g: 0.125, b: 0.133, a: 1}
   m_AmbientGroundColor: {r: 0.047, g: 0.043, b: 0.035, a: 1}
-  m_AmbientIntensity: 3
+  m_AmbientIntensity: 4.29
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: e222162ddb8d34547a133b673221b195, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -38,7 +38,7 @@ RenderSettings:
   m_ReflectionIntensity: 1
   m_CustomReflection: {fileID: 0}
   m_Sun: {fileID: 998077368}
-  m_IndirectSpecularColor: {r: 0.42202702, g: 0.45234203, b: 0.47376746, a: 1}
+  m_IndirectSpecularColor: {r: 0.22585934, g: 0.19245467, b: 0.19380915, a: 1}
   m_UseRadianceAmbientProbe: 0
 --- !u!157 &3
 LightmapSettings:
@@ -2001,7 +2001,7 @@ Light:
   serializedVersion: 8
   m_Type: 1
   m_Color: {r: 1, g: 0.9875014, b: 0.9103774, a: 1}
-  m_Intensity: 2.8
+  m_Intensity: 1.8
   m_Range: 10
   m_SpotAngle: 30
   m_CookieSize: 10
@@ -2034,13 +2034,13 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 998077367}
-  m_LocalRotation: {x: 0.026167948, y: 0.86483854, z: -0.045324225, w: 0.4993147}
+  m_LocalRotation: {x: 0.01609334, y: 0.803459, z: -0.021740966, w: 0.5947454}
   m_LocalPosition: {x: 200, y: 200, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children: []
   m_Father: {fileID: 0}
   m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 6, y: 120, z: 0}
+  m_LocalEulerAnglesHint: {x: 3.1, y: 106.98, z: 0}
 --- !u!1 &1111568700
 GameObject:
   m_ObjectHideFlags: 0
@@ -3823,7 +3823,7 @@ Camera:
   m_GameObject: {fileID: 1892331042}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 2
+  m_ClearFlags: 1
   m_BackGroundColor: {r: 1, g: 1, b: 1, a: 1}
   m_projectionMatrixMode: 1
   m_SensorSize: {x: 36, y: 24}
@@ -3835,9 +3835,9 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 285
+  near clip plane: 0.1
   far clip plane: 5000
-  field of view: 45
+  field of view: 65
   orthographic: 0
   orthographic size: 5
   m_Depth: -1
@@ -3861,8 +3861,8 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1892331042}
-  m_LocalRotation: {x: -0.26336554, y: -0.30088142, z: 0.086844966, w: -0.9124511}
-  m_LocalPosition: {x: -133.3, y: 548.8512, z: -390.6}
+  m_LocalRotation: {x: 0.062148858, y: -0.24680483, z: -0.015865345, w: -0.96694016}
+  m_LocalPosition: {x: 318.76, y: 21.3, z: 9.95}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_Children:
   - {fileID: 518509707}
@@ -3870,7 +3870,7 @@ Transform:
   - {fileID: 1710315733}
   m_Father: {fileID: 0}
   m_RootOrder: 1
-  m_LocalEulerAnglesHint: {x: 32.2, y: -323.5, z: 0}
+  m_LocalEulerAnglesHint: {x: 34.1, y: -338.93, z: 0}
 --- !u!114 &1892331047
 MonoBehaviour:
   m_ObjectHideFlags: 0

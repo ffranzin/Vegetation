@@ -67,7 +67,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MainTex:
-        m_Texture: {fileID: 2800000, guid: 50688cecb755ca44ca7e0c31baad8556, type: 3}
+        m_Texture: {fileID: 2800000, guid: f82bebcde4eb11f4a89374607cadaee0, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MetallicGlossMap:
@@ -111,7 +111,7 @@ Material:
         m_Scale: {x: 30, y: 30}
         m_Offset: {x: 0, y: 0}
     - _WaterMap:
-        m_Texture: {fileID: 2800000, guid: 556669c2784b8974489f8d9676983701, type: 3}
+        m_Texture: {fileID: 2800000, guid: 469e147468c8fa7439e1ab7cb39bcb69, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _WaterNormalTex:
@@ -143,7 +143,7 @@ Material:
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
-    - _H: 140
+    - _H: 409
     - _L1: 1.7
     - _L2: 0.6
     - _L3: 2

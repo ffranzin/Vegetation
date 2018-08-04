@@ -17,6 +17,43 @@ MonoBehaviour:
   - {fileID: 114763075918258442}
   - {fileID: 114892448495747694}
   - {fileID: 114547355832344904}
+  - {fileID: 114021254047265138}
+--- !u!114 &114021254047265138
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b3f6f3f7c722b4544b97e3c75840aa33, type: 3}
+  m_Name: AutoExposure
+  m_EditorClassIdentifier: 
+  active: 0
+  enabled:
+    overrideState: 1
+    value: 1
+  filtering:
+    overrideState: 1
+    value: {x: 50, y: 95}
+  minLuminance:
+    overrideState: 1
+    value: 0
+  maxLuminance:
+    overrideState: 1
+    value: 0
+  keyValue:
+    overrideState: 1
+    value: 1
+  eyeAdaptation:
+    overrideState: 1
+    value: 0
+  speedUp:
+    overrideState: 1
+    value: 2
+  speedDown:
+    overrideState: 1
+    value: 1
 --- !u!114 &114545241259211488
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -106,7 +143,7 @@ MonoBehaviour:
     value: -27
   saturation:
     overrideState: 1
-    value: 8
+    value: 10
   brightness:
     overrideState: 0
     value: 0
@@ -115,10 +152,10 @@ MonoBehaviour:
     value: 0
   contrast:
     overrideState: 1
-    value: 9
+    value: 11
   mixerRedOutRedIn:
     overrideState: 0
-    value: 100
+    value: 58
   mixerRedOutGreenIn:
     overrideState: 0
     value: 62
@@ -144,14 +181,14 @@ MonoBehaviour:
     overrideState: 0
     value: 100
   lift:
-    overrideState: 0
-    value: {x: 0.9577999, y: 0.92968416, z: 1, w: 0}
+    overrideState: 1
+    value: {x: 0.8256023, y: 0.92014486, z: 1, w: 0}
   gamma:
-    overrideState: 0
-    value: {x: 1, y: 1, z: 1, w: 0}
+    overrideState: 1
+    value: {x: 1, y: 0.9819555, z: 0.9716565, w: 0}
   gain:
-    overrideState: 0
-    value: {x: 0.92556787, y: 0.9894171, z: 1, w: 0}
+    overrideState: 1
+    value: {x: 0.57961404, y: 0.844901, z: 1, w: 0}
   masterCurve:
     overrideState: 0
     value:
@@ -1445,7 +1482,7 @@ MonoBehaviour:
     value: 1
   intensity:
     overrideState: 1
-    value: 1
+    value: 1.35
   color:
     overrideState: 1
     value: {r: 0, g: 0, b: 0, a: 1}
