@@ -118,7 +118,7 @@ Shader "Custom/MyCustomTerrain" {
 			float w = tex2D(_WaterMap, IN.uv_MainTex);
 			if (w > 0) {
 				col = lerp(col, tex2D(_Water, IN.uv_MainTex * _Water_ST.xy), saturate(w));
-				col += fixed4(-0.15, -0.15, 0.35, 0);
+				//col += fixed4(-0.15, -0.15, 0.35, 0);
 			}
 			
 			o.Albedo = col;
