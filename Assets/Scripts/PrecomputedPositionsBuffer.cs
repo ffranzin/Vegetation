@@ -2,31 +2,51 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PrecomputedPositionsBuffer : MonoBehaviour {
-    
-    public static void GeneratePos(List<Vector2> positions, int boundSize, float minDist, float border = 3, int nPos = 1000)
+public class PrecomputedPositionsBuffer : MonoBehaviour
+{
+
+    public static void GeneratePos1(List<Vector2> positions, int boundSize, float minDist, float border = 3, int nPos = 4000)
     {
+
         int noLoop = nPos * 5;
 
         minDist = minDist / boundSize;
 
         border = border / boundSize;
-
-        while(positions.Count < nPos && noLoop > 0)
+        Random.seed = 10;
+        while (positions.Count < nPos && noLoop > 0)
         {
-            Vector2 pos = new Vector2(Random.Range(border, 1f- border), Random.Range(border, 1f - border));
-            
+            Vector2 pos = new Vector2(Random.Range(border, 1f - border), Random.Range(border, 1f - border));
+
             noLoop--;
 
             if (positions.Exists(p => (p - pos).magnitude < minDist)) continue;
 
             positions.Add(pos);
-            
+
         }
-        
+
         Debug.Log("POSITIONS GENERATED : " + positions.Count);
         //SpawnAll(positions, boundSize);
     }
+
+
+    public static void GeneratePos(List<Vector2> positions, int boundSize, float minDist, float border = 3, int nPos = 3000)
+    {
+        r = minDist * 2;
+        k = 20;
+        size = boundSize;
+
+        Step0();
+
+        foreach (Vector2 p in poissonPosition)
+            positions.Add(new Vector2(p.x / boundSize, p.y / boundSize));
+
+        Debug.Log("POSITIONS GENERATED : " + poissonPosition.Count);
+        //SpawnAll(positions, boundSize);
+    }
+
+
 
     /// <summary>
     /// ///////////////////poisson
@@ -45,6 +65,7 @@ public class PrecomputedPositionsBuffer : MonoBehaviour {
 
     static void Step0()
     {
+        Random.seed = 10;
         w = r / Mathf.Sqrt(2f);
 
         cols = Mathf.FloorToInt(size / w);
@@ -116,6 +137,7 @@ public class PrecomputedPositionsBuffer : MonoBehaviour {
 
         active.RemoveAt(0);
         Step2();
+
     }
 
 
@@ -123,19 +145,19 @@ public class PrecomputedPositionsBuffer : MonoBehaviour {
     {
         poissonPosition.Clear();
 
-       // minDist = minDist / boundSize;
+        // minDist = minDist / boundSize;
 
-       // border = border / boundSize;
-        
+        // border = border / boundSize;
+
         Step0();
         Debug.Log("asdas" + poissonPosition.Count);
         return poissonPosition;
     }
 
 
-        public static void SpawnAll(List<Vector2> positions, int boundSize)
+    public static void SpawnAll(List<Vector2> positions, int boundSize)
     {
-        foreach(Vector2 p in positions)
+        foreach (Vector2 p in positions)
         {
             GameObject go = GameObject.CreatePrimitive(PrimitiveType.Sphere);
 

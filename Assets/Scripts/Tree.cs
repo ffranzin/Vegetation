@@ -5,10 +5,6 @@ using UnityEngine;
 
 public class Tree : MonoBehaviour
 {
-    const float WORLD_MIN_TEMPERATURE = -20;
-    const float WORLD_MAX_TEMPERATURE = 50;
-
-
     private float TreeHeightOccuranceProbability(float worldHeight)
     {
         return Mathf.Clamp01(globalHeightCurve.Evaluate(worldHeight));
@@ -37,7 +33,6 @@ public class Tree : MonoBehaviour
     public int my_layer;
 
     public AnimationCurve globalHeightCurve;
-    public AnimationCurve temperatureCurve;
     public AnimationCurve humidityCurve;
     public AnimationCurve slopeCurve;
     public AnimationCurve sensitiveToUpperLevelCurve;
@@ -99,7 +94,8 @@ public class Tree : MonoBehaviour
         }
     }
 
-
+    public GameObject model;
+    static GameObject modelToCPUrender;
 
     ////////////////////
     public Mesh[] models;
@@ -112,10 +108,9 @@ public class Tree : MonoBehaviour
     public Color temp_color;
     bool enableRender = true;
     uint[] args = new uint[5] { 0, 0, 0, 0, 0 };
-
     public int positionsGenerated = 0;
     
-    Mesh drawMesh;
+    static Mesh drawMesh;
 
     Bounds bound;
    
@@ -144,16 +139,48 @@ public class Tree : MonoBehaviour
         args[3] = (uint)drawMesh.GetBaseVertex(0);
 
         bound = new Bounds(Vector3.zero, Vector3.one * 100000);
+        
+        modelToCPUrender = model;
     }
 
 
+    void SpawnInCPU(int idNP, int n)
+    {
+        for(int i = 0; i < n; i++)
+        {
+            Vector4 tPos = DispatcherComputePositions.GetPositionInBuffer(idNP, i);
+
+           // GameObject go = GameObject.CreatePrimitive(PrimitiveType.Sphere);// Instantiate(modelToCPUrender);
+            GameObject go = Instantiate(model);
+            //go.GetComponent<MeshFilter>().mesh = drawMesh;
+            
+            go.name = "Layer " + idNP + "  " + i;
+            go.transform.position = new Vector3(tPos.x, tPos.y * 400, tPos.z);
+            
+            go.transform.localScale = Vector3.one * Random.Range(0.8f, 1.2f);
+            go.transform.rotation = Quaternion.Euler(Vector3.up * Random.Range(0, 360));
+
+            go.hideFlags = HideFlags.HideInHierarchy;
+
+
+            if (myIndexInTreePool == 3)
+                go.transform.position = go.transform.position - Vector3.up * Random.Range(2f, 4f);
+        }
+    }
+
+    
     public void Update()
     {
-        //if (Input.GetKeyDown(KeyCode.R)) enableRender = !enableRender;
+        if (!enableRender) return;
+        if(Input.GetKeyDown(KeyCode.Y))
+        {
+            SpawnInCPU(myIndexInTreePool, positionsGenerated);
+            enableRender = false;
+        }
         
         if (positionsGenerated == 0) return;
         bound.center = Camera.main.transform.position;
-       // Graphics.DrawMeshInstancedIndirect(drawMesh, 0, m_material, bound, argsBuffer);
+        Graphics.DrawMeshInstancedIndirect(drawMesh, 0, m_material, bound, argsBuffer);
     }
 
 

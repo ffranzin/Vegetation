@@ -235,28 +235,24 @@ public class QuadTreeManager : MonoBehaviour
             qt.atlasPage = GlobalManager.m_atlas.GetPage();
             DispatcherComputePositions.ComputePositions(qt, GlobalManager.VEG_MIN_DIST_L1 / 2, 1);
             hasDispath = true;
-            genl1++;
         }
         else if (qt.level == QUADTREE_VEG_LEVEL_2)
         {
             qt.atlasPage = GlobalManager.m_atlas.GetPage();
             DispatcherComputePositions.ComputePositions(qt, GlobalManager.VEG_MIN_DIST_L2 / 2, 2);
             hasDispath = true;
-            genl2++;
         }
         else if (qt.level == QUADTREE_VEG_LEVEL_3)
         {
             qt.atlasPage = GlobalManager.m_atlas.GetPage();
             DispatcherComputePositions.ComputePositions(qt, GlobalManager.VEG_MIN_DIST_L3 / 2, 3);
             hasDispath = true;
-            genl3++;
         }
 
         if (hasDispath)
         {
             qt.containsVeg = true;
             QUADTREE_GEN_POS_NODE++;
-            generated++;
         }
 
         qt.positionsHasBeenGenerated = true;
@@ -302,21 +298,57 @@ public class QuadTreeManager : MonoBehaviour
             VerifyNewNodes(qt.children[i]);
     }
 
-
-
-
-    static int genl1, genl2, genl3;
-    static int avgl1, avgl2, avgl3;
-    static int generated;
-    static GameObject g;
-    float timeCounteravg = 0;
-    bool block = true;
-
-
-    float timeravg = 0;
-    float timer = 0;
-
+    
     private void Update()
+    {
+        if (m_quadTree == null) return;
+
+        QUADTREE_GEN_POS_NODE = 0;
+
+        frustumPlanes = GeometryUtility.CalculateFrustumPlanes(Camera.main);
+        
+        VerifyNewNodes(m_quadTree);
+       
+        UpdateTreesQuantity();
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            ClearNodes(m_quadTree, true);
+            TreePool.treeCountPositionsBuffer.SetData(new int[TreePool.size]);
+        }
+
+        // ClearAll();
+    }
+    
+
+
+    static void UpdateTreesQuantity()
+    {
+        if (Time.frameCount % 30 != 0) return;
+
+        int[] pos;
+
+        TreePool.UpdateTreeAmountData(out pos);
+    }
+
+
+
+
+    /// <summary>
+    /// Release nodes non visible.
+    /// </summary>
+    public void ClearAll()
+    {
+        if (Time.frameCount % 240 != 0) return;
+        
+        ClearNodes(m_quadTree);
+
+       // Debug.Log("FREE NODES " + NodePool.freeNodes);
+    }
+}
+
+/*
+ private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Space))
             block = !block;
@@ -358,65 +390,13 @@ public class QuadTreeManager : MonoBehaviour
         
         generated = 0;
         
-        ClearAll();
+       // ClearAll();
 
         UpdateTreesQuantity();
 
-        ClearNodes(m_quadTree, true);
+       // ClearNodes(m_quadTree, true);
 
         block = !block;
         //MoveCam();
     }
-
-
-
-    static void MoveCam()
-    {
-        if (g == null)
-        {
-            g = new GameObject();
-            g.transform.position = TerrainManager.TERRAIN_END;
-        }
-        
-        Camera.main.transform.position = Camera.main.transform.position + 
-                                    (TerrainManager.TERRAIN_END).normalized * 1000 * Time.deltaTime;
-
-        Camera.main.transform.LookAt(g.transform);
-    }
-
-
-
-    static void UpdateTreesQuantity()
-    {
-        //if (Time.frameCount % 30 != 0) return;
-
-        int[] pos;
-
-        TreePool.UpdateTreeAmountData(out pos);
-
-        if (pos[0] > 0 && pos[1] > 0 && pos[2] > 0)
-        {
-            avgl1 = (avgl1 + pos[0]) / 2;
-            avgl2 = (avgl2 + pos[1]) / 2;
-            avgl3 = (avgl3 + pos[2]) / 2;
-        }
-    }
-
-
-
-
-    /// <summary>
-    /// Release nodes non visible.
-    /// </summary>
-    public void ClearAll()
-    {
-        if (Time.frameCount % 240 != 0) return;
-        
-        ClearNodes(m_quadTree);
-
-       // Debug.Log("FREE NODES " + NodePool.freeNodes);
-    }
-
-
-}
-
+     */

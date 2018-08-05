@@ -130,7 +130,7 @@ public class NodePool : MonoBehaviour
 
         for (int i = 0; i < MAX_BUFFER_RELEASED_PER_FRAME && qt_NodeToReleasePos.Count > 0; i++)
         {
-            ReleaseBuffers(qt_NodeToReleasePos[0]);
+            //ReleaseBuffers(qt_NodeToReleasePos[0]);
 
             qt_NodePool.Add(qt_NodeToReleasePos[0]);
 

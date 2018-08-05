@@ -310,7 +310,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &118395150
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1386,7 +1386,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &641180263
 Transform:
   m_ObjectHideFlags: 0
@@ -1657,8 +1657,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 80ecf1e74f88f1844ae391b1fe4cc119, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  heightMap: {fileID: 2800000, guid: 574ec052f9be9a64082dd0549fe13053, type: 3}
-  waterMap: {fileID: 2800000, guid: fdc853764d352d44199d2111301be36b, type: 3}
+  heightMap: {fileID: 2800000, guid: 74c913d3b7ad2da4ba466575c848e9d5, type: 3}
+  waterMap: {fileID: 2800000, guid: 469e147468c8fa7439e1ab7cb39bcb69, type: 3}
   tex: {fileID: 0}
 --- !u!23 &714505606
 MeshRenderer:
@@ -1901,7 +1901,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 1408698886873090, guid: d04102095fa17e34f82929052c65aafb, type: 2}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d04102095fa17e34f82929052c65aafb, type: 2}
@@ -2041,6 +2041,12 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 3.1, y: 106.98, z: 0}
+--- !u!114 &999646643 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 114024824283793762, guid: d04102095fa17e34f82929052c65aafb,
+    type: 2}
+  m_PrefabInternal: {fileID: 766812405}
+  m_Script: {fileID: -98529514, guid: f70555f144d8491a825f0804e09c671c, type: 3}
 --- !u!1 &1111568700
 GameObject:
   m_ObjectHideFlags: 0
@@ -2287,7 +2293,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1250627158
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2995,7 +3001,7 @@ Prefab:
       objectReference: {fileID: 0}
     - target: {fileID: 100000, guid: 780611a67e8e941a2b3aa96e5915a793, type: 2}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 780611a67e8e941a2b3aa96e5915a793, type: 2}
@@ -3095,7 +3101,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &1701458451
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3110,7 +3116,8 @@ MonoBehaviour:
   _treePool:
   - {fileID: 1502565683305554, guid: 3b435860d9d71604f87832e04e012bff, type: 2}
   - {fileID: 1104685852501584, guid: 64a1ddb99514712498b742f7a2867f0c, type: 2}
-  - {fileID: 1446652380719004, guid: c4fa21d4cb0fa2f4595c953ed8d69e32, type: 2}
+  - {fileID: 1502565683305554, guid: 727e10544aa82484db8145fa012672e1, type: 2}
+  - {fileID: 1104685852501584, guid: c4fa21d4cb0fa2f4595c953ed8d69e32, type: 2}
 --- !u!4 &1701458452
 Transform:
   m_ObjectHideFlags: 0
@@ -3239,24 +3246,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff8444a76c9923d4295f1d3899a706cb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  heighmapPath: Assets/Resources/Maps/heightmap_smooth_Rfloat_5.tif
-  watermapPath: Assets/Resources/Maps/watermap_smooth_Rfloat_2.tif
+  heighmapPath: Assets/Resources/Maps/heightmap_smooth_Rfloat_4 copy.tif
+  watermapPath: Assets/Resources/Maps/watermap_smooth_Rfloat_4.tif
   texFormat: 14
   filterMode: 1
-  heightmapRawImg: {fileID: 114138879120651192, guid: 5b6c6f01fec5a0c4091d6c0735ddb34b,
-    type: 2}
+  heightmapRawImg: {fileID: 999646643}
   meanHeightRawImg: {fileID: 114513437689900264, guid: 5b6c6f01fec5a0c4091d6c0735ddb34b,
     type: 2}
   relativeHeightRawImg: {fileID: 114383479059397770, guid: 5b6c6f01fec5a0c4091d6c0735ddb34b,
     type: 2}
-  slopeRawImg: {fileID: 114929923936720580, guid: 5b6c6f01fec5a0c4091d6c0735ddb34b,
-    type: 2}
+  slopeRawImg: {fileID: 1982893142}
   watermapRawImg: {fileID: 114512255202032188, guid: 5b6c6f01fec5a0c4091d6c0735ddb34b,
     type: 2}
   waterSpreadRawImg: {fileID: 114146719807324560, guid: 5b6c6f01fec5a0c4091d6c0735ddb34b,
     type: 2}
-  moistureRawImg: {fileID: 114786039453859192, guid: 5b6c6f01fec5a0c4091d6c0735ddb34b,
-    type: 2}
+  moistureRawImg: {fileID: 1723497558}
 --- !u!4 &1711021550
 Transform:
   m_ObjectHideFlags: 0
@@ -3282,13 +3286,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   parameters:
-    d_MeanHeight: 32
-    d_Slope: 12
-    d_WaterSpread: 32
-    w_Height: 1
-    w_RelativeHeight: 0.8
-    w_Slope: 2
-    w_WaterSpread: 1.5
+    d_MeanHeight: 46
+    d_Slope: 49
+    d_WaterSpread: 512
+    w_Height: 0.8
+    w_RelativeHeight: 1.1
+    w_Slope: 2.6
+    w_WaterSpread: 10
     s_Atlas: {x: 0, y: 0}
     s_Splat: {x: 1024, y: 1024}
   curves:
@@ -3296,23 +3300,32 @@ MonoBehaviour:
       serializedVersion: 2
       m_Curve:
       - serializedVersion: 3
-        time: 0
-        value: 0.49440002
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 34
-        weightedMode: 0
-        inWeight: 0
-        outWeight: 0.33333334
-      - serializedVersion: 3
-        time: 1
-        value: 0.49440002
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 34
+        time: -0.0027122498
+        value: 0.9880791
+        inSlope: -0.68033195
+        outSlope: -0.68033195
+        tangentMode: 0
         weightedMode: 0
         inWeight: 0.33333334
-        outWeight: 0
+        outWeight: 0.05361084
+      - serializedVersion: 3
+        time: 0.26272228
+        value: 0.2545833
+        inSlope: -1.5521098
+        outSlope: -1.5521098
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.10717533
+      - serializedVersion: 3
+        time: 0.98947936
+        value: -0.17121357
+        inSlope: 0.13886344
+        outSlope: 0.13886344
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
@@ -3480,6 +3493,12 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 9
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1723497558 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 114822181579557200, guid: d04102095fa17e34f82929052c65aafb,
+    type: 2}
+  m_PrefabInternal: {fileID: 766812405}
+  m_Script: {fileID: -98529514, guid: f70555f144d8491a825f0804e09c671c, type: 3}
 --- !u!1 &1736725997
 GameObject:
   m_ObjectHideFlags: 0
@@ -3877,7 +3896,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1892331042}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0612622581c66cc4f91521e6cce8a4bc, type: 3}
   m_Name: 
@@ -3964,6 +3983,12 @@ MonoBehaviour:
   m_BeforeTransparentBundles: []
   m_BeforeStackBundles: []
   m_AfterStackBundles: []
+--- !u!114 &1982893142 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 114461050266738968, guid: d04102095fa17e34f82929052c65aafb,
+    type: 2}
+  m_PrefabInternal: {fileID: 766812405}
+  m_Script: {fileID: -98529514, guid: f70555f144d8491a825f0804e09c671c, type: 3}
 --- !u!1 &1997611375
 GameObject:
   m_ObjectHideFlags: 0

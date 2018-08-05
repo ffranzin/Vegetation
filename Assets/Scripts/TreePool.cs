@@ -34,6 +34,7 @@ public class TreePool : MonoBehaviour
     public static ComputeBuffer globalTreeHeightInfo;
     public static ComputeBuffer globalTreeSensitiveInfo;
 
+    public static Texture2D positionsTexture2D;
 
     public static int size
     {
@@ -48,22 +49,24 @@ public class TreePool : MonoBehaviour
         treePool = new List<Tree>();
         int id = 0;
 
-        //for (int i = 0; i < _treePool.Length; i++)
-        //{
-        //    GameObject go = Instantiate(_treePool[i]);
+        for (int i = 0; i < _treePool.Length; i++)
+        {
+            GameObject go = Instantiate(_treePool[i]);
 
-        //    Tree t = go.GetComponent<Tree>();
+            Tree t = go.GetComponent<Tree>();
 
-        //    if (t == null) Debug.LogError("Missing Component.");
+            if (t == null) Debug.LogError("Missing Component.");
 
-        //    t.myIndexInTreePool = id;
+            t.myIndexInTreePool = id;
 
-        //    treePool.Add(t);
+            treePool.Add(t);
 
-        //    id++;
-        //}
+            id++;
+        }
 
-        int n = 40;
+
+        /*
+        int n = 0;
         for (int k = 0; k < n; k++)
         {
             GameObject go = Instantiate(_treePool[0]);
@@ -111,7 +114,7 @@ public class TreePool : MonoBehaviour
             id++;
 
         }
-
+        */
 
 
 
@@ -145,11 +148,6 @@ public class TreePool : MonoBehaviour
             t.UpdateBuffers(out count, out level);
             vegAmount[level - 1] += count;
         }
-
-        Debug.Log("veg l1 " + vegAmount[0]);
-        Debug.Log("veg l2 " + vegAmount[1]);
-        Debug.Log("veg l3 " + vegAmount[2]);
-        
         UI.UpdateAmount(vegAmount);
     }
 
@@ -212,6 +210,8 @@ public class TreePool : MonoBehaviour
         positionTextureTmp.useMipMap = false;
         positionTextureTmp.Create();
 
+        positionsTexture2D = new Texture2D(16384, treePool.Count, TextureFormat.RGFloat, false, false); 
+        
         Shader.SetGlobalInt("_globalMaxPositionBufferSize", 16000);
 
        // GameObject g1 = GameObject.Find("Plane2");
@@ -226,7 +226,12 @@ public class TreePool : MonoBehaviour
         globalTreeSensitiveInfo.Release();
     }
 
+    private void Update()
+    {
+        if (Time.frameCount % 60 != 0) return;
 
+       // FillDiscretizedTreeInfoBuffer();
+    }
 }
 
 

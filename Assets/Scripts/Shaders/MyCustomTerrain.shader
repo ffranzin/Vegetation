@@ -89,7 +89,7 @@ Shader "Custom/MyCustomTerrain" {
 			v.normal.xyz = n.xzy;
 
 			if (v.vertex.z >= 0) {
-				v.vertex.z += height * _H;
+				v.vertex.z = height * _H;
 			}
 			else {
 				v.vertex.z = -5;

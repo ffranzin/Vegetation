@@ -15,14 +15,14 @@ struct QuadTreeInfo
 };
 
 
-RWStructuredBuffer<float2> _GlobalPrecomputedPositionL1;
-RWStructuredBuffer<float2> _GlobalPrecomputedPositionL2;
-RWStructuredBuffer<float2> _GlobalPrecomputedPositionL3;
+StructuredBuffer<float2> _GlobalPrecomputedPositionL1;
+StructuredBuffer<float2> _GlobalPrecomputedPositionL2;
+StructuredBuffer<float2> _GlobalPrecomputedPositionL3;
 
 
-RWStructuredBuffer<float> _globalTreeSlopeInfo;
-RWStructuredBuffer<float> _globalTreeHeightInfo;
-RWStructuredBuffer<float> _globalTreeHumidityInfo;
-RWStructuredBuffer<float> _globalTreeSensitiveInfo;
-RWStructuredBuffer<float> _globalTreeNecessityInfo;
+StructuredBuffer<float> _globalTreeSlopeInfo;
+StructuredBuffer<float> _globalTreeHeightInfo;
+StructuredBuffer<float> _globalTreeHumidityInfo;
+StructuredBuffer<float> _globalTreeSensitiveInfo;
+StructuredBuffer<float> _globalTreeNecessityInfo;
 

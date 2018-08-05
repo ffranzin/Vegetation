@@ -46,8 +46,7 @@
 				float2 uv = data.xy / 1024;
 
 				float h = tex2Dlod(_HeightMap, float4(uv.x, uv.y, 0, 0)).x * TERRAIN_HEIGHT_MULTIPLIER;
-				h = h * 3;
-				h = 1;
+				h = h * 4;
 				float scale = 4 - vegLevel;
 
 				unity_ObjectToWorld._11_21_31_41 = float4(scale, 0, 0, 0);

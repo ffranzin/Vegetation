@@ -28,8 +28,8 @@ public class DispatcherComputePositions : MonoBehaviour
         // moisture.CalculateAll(new Vector2Int((int)(qt.bound.min.x / TerrainManager.PIXEL_WIDTH),
         //                                    (int)(qt.bound.min.z / TerrainManager.PIXEL_HEIGHT)));
 
-        moisture.CalculateAll(new Vector2Int(0, 0));
-        return;
+        //moisture.CalculateAll(new Vector2Int(0, 0));
+       
         QuadTreeInfo qtInfo = qt.QuadTreeInfo(vegLevel, radius);
         ComputeBuffer qtInfoBuffer = new ComputeBuffer(1, Marshal.SizeOf(typeof(QuadTreeInfo)));
         qtInfoBuffer.SetData(new QuadTreeInfo[1] { qtInfo });
@@ -108,6 +108,30 @@ public class DispatcherComputePositions : MonoBehaviour
         m_computePositions.Dispatch(updatePosCounter, TreePool.size, 1, 1);
     }
 
+    public static Vector4 GetPositionInBuffer(int myIndexInNodePool, int index)
+    {
+        Vector4[] pos = new Vector4[1];
+
+        ComputeBuffer a = new ComputeBuffer(4, sizeof(float));
+
+        int getPosKernel = m_computePositions.FindKernel("GetPosition");
+
+        m_computePositions.SetInt("tree", myIndexInNodePool);
+        m_computePositions.SetInt("index", index);
+
+        m_computePositions.SetBuffer(getPosKernel, "worldPositionBuffer", a);
+        m_computePositions.SetTexture(getPosKernel, "_positionsTexture", TreePool.positionTexture);
+        m_computePositions.SetTexture(getPosKernel, "TexHeight", TerrainManager.m_heightMap);
+
+        m_computePositions.Dispatch(getPosKernel, 1, 1, 1);
+
+        a.GetData(pos);
+      //  Debug.Log(pos[0] + " " + index +"  "+ myIndexInNodePool);
+
+        return pos[0];
+    }
+
+
 
     void Start()
     {
@@ -118,9 +142,9 @@ public class DispatcherComputePositions : MonoBehaviour
         transferDFKernel = m_computeSplat.FindKernel("TransferDF");
         clearKernel = m_computeSplat.FindKernel("Clear");
         setIniSizeBufferKernel = m_computePositions.FindKernel("SetIniSizeBuffer");
-
+       
         moisture = GameObject.Find("Calculator").GetComponent<MoistureDistribuition>();
-        //moisture.CalculateAll(new Vector2Int(0, 0));
+        moisture.CalculateAll(new Vector2Int(0, 0));
         
         m_computePositions.SetTexture(computePosKernel, "TexWater", moisture.TexManager.m_waterMapTex);
         m_computePositions.SetTexture(computePosKernel, "TexSlope", moisture.TexManager.m_slopeTex);

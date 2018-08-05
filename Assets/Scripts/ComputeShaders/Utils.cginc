@@ -1,7 +1,7 @@
 
 #define INFINITY 9999999
 
-#define BLOCK_SIZE 1000
+#define BLOCK_SIZE 3000
 
 #include "StructuresTrees.cginc"
 
